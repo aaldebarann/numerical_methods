@@ -149,21 +149,17 @@ class IntegrationApp:
         with open("input_params.txt", "w", encoding="utf-8") as params_file:
             params_file.write(f"{start} {end} {initial_condition} {precision} {step} {max_steps} {t} {m} {second_initial_condition} {parameter}")
         
-        try:
-            subprocess.run(["./labwork1.exe"], check=True)
-            with open('results.csv', 'r') as file:
-                reader = csv.reader(file)
-                result_tree = self.create_result_tab(columns)
-            
-                for row in reader:
-                    values = [float(value) for value in row[0:]]
-                    result_tree.insert("", "end", values=values)
-            
+        subprocess.run(["./labwork1.exe"], check=True)
+        with open('results.csv', 'r') as file:
+            reader = csv.reader(file)
+            result_tree = self.create_result_tab(columns)
+                
+            for row in reader:
+                values = [float(value) for value in row[0:]]
+                result_tree.insert("", "end", values=values)
+                
             self.create_plots()
             self.create_summary_table()
-        except subprocess.CalledProcessError as e:
-            self.results_text.delete(1.0, tk.END)
-            self.results_text.insert(tk.END, f"Ошибка выполнения программы: {e}")
     
     def create_plots(self):
         x = []
@@ -189,6 +185,8 @@ class IntegrationApp:
         elif task == "Вторая":
             self.ax.plot(x, y1, label="Вторая (производная)")
             self.ax.plot(x, y2, label="Вторая")
+            self.open_new_graph(y1, y2)
+            
         
         self.ax.set_xlabel('x')
         self.ax.set_ylabel('u')
@@ -208,6 +206,8 @@ class IntegrationApp:
         self.ax.grid(True)
         self.ax.legend(loc='upper left', title="Легенда")
         self.canvas.draw()   
+        for i in range(self.notebook.index("end") - 1, -1, -1):
+            self.notebook.forget(i)
         
     def create_result_tab(self, columns):
         result_tab = ttk.Frame(self.notebook)
@@ -240,6 +240,22 @@ class IntegrationApp:
             pass
     
         return summary_tree
+    
+    def open_new_graph(self, u, v):
+        new_window = tk.Toplevel(root)
+        new_window.title("Фазовый портрет")
+
+        new_fig, new_ax = plt.subplots(figsize=(6, 4))
+        new_canvas = FigureCanvasTkAgg(new_fig, master=new_window)
+        new_canvas.get_tk_widget().pack()
+
+        new_ax.plot(u, v)
+
+        new_ax.set_xlabel('u')
+        new_ax.set_ylabel('u\'')
+        new_ax.set_title('Фазовый портрет')
+        new_ax.grid(True)
+        new_canvas.draw()
 
 
 if __name__ == "__main__":

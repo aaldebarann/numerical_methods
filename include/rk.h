@@ -54,55 +54,39 @@ double rk(double& p, double& x, double& u, double& h, double (*f)(double, double
     double k1, k2, k3, k4;
 
     k1 = f(p, x, u);
-    k2 = f(p, x + h/2, u + h * k1 / 2.0);
-    k3 = f(p, x + h/2, u + h * k2 / 2.0);
+    k2 = f(p, x + h / 2.0, u + h * k1 / 2.0);
+    k3 = f(p, x + h / 2.0, u + h * k2 / 2.0);
     k4 = f(p, x + h, u + h * k3);
 
     return u + h * (k1 + 2 * k2 + 2 * k3 + k4) / 6.0;
 }
 
 double rkh(double& p, double& x, double& u, double& h, double (*f)(double, double, double)) {
-    double k1, k2, k3, k4;
-    double hh = h / 2;
-
-    k1 = f(p, x, u);
-    k2 = f(p, x + hh / 2, u + hh * k1 / 2.0);
-    k3 = f(p, x + hh / 2, u + hh * k2 / 2.0);
-    k4 = f(p, x + hh, u + hh * k3);
-
-    double u2 = u + h * (k1 + 2 * k2 + 2 * k3 + k4) / 6.0;
-    double x2 = x + hh;
-
-    k1 = f(p, x2, u2);
-    k2 = f(p, x2 + hh / 2, u2 + hh * k1 / 2.0);
-    k3 = f(p, x2 + hh / 2, u2 + hh * k2 / 2.0);
-    k4 = f(p, x2 + hh, u2 + hh * k3);
-
-    return u2 + hh * (k1 + 2 * k2 + 2 * k3 + k4) / 6.0;
+    double hh = h / 2.0;
+    double u1 = rk(p, x, u, hh, f);
+    double x1 = x + hh;
+    return rk(p, x1, u1, hh, f);
 }
 
 double rkv(double& p, double& x, double& u, double& h, double& ele, double& epsilon, int& C1, int& C2, double (*f)(double, double, double)) {
     double u1 = rk(p, x, u, h, f);
     double u2 = rkh(p, x, u, h, f);
-    ele = (u2 - u1) / 15;
-    if (abs(ele) > epsilon) {
+    ele = abs(u2 - u1) / 15;
+    if (ele > epsilon) {
         h /= 2;
         C1++;
         return rkv(p, x, u, h, ele, epsilon, C1, C2, f);
     }
-    else if (abs(ele) < epsilon / 32) {
-        if (h < 0.01) {
-            h *= 2;
-            C2++;
-        }
-        return u1 + ele * 16;
+    else if (ele < epsilon / 32) {
+        h *= 2;
+        C2++;
+        return u1;
     }
-    else return u1 + ele * 16;
+    else return u1;
 } 
 
 std::vector<double> rk(double& p, double& x, std::vector<double>& u, double& h, std::vector<double> (*f)(double, double, std::vector<double>)) {
     std::vector<double> k1, k2, k3, k4;
-    double hh = h / 2;
 
     k1 = f(p, x, u);
     k2 = f(p, x + h / 2, u + k1 * (h / 2.0));
@@ -113,22 +97,10 @@ std::vector<double> rk(double& p, double& x, std::vector<double>& u, double& h, 
 }
 
 std::vector<double> rkh(double& p, double& x, std::vector<double>& u, double& h, std::vector<double>(*f)(double, double, std::vector<double>)) {
-    std::vector<double> k1, k2, k3, k4;
     double hh = h / 2;
-    k1 = f(p, x, u);
-    k2 = f(p, x + hh / 2, u + k1 * (hh / 2.0));
-    k3 = f(p, x + hh / 2, u + k2 * (hh / 2.0));
-    k4 = f(p, x + hh, u + k3 * hh);
-
-    std::vector<double> u2 = u + (k1 + k2 * 2 + k3 * 2 + k4) * (h / 6.0);
-    double x2 = x + hh;
-
-    k1 = f(p, x2, u2);
-    k2 = f(p, x2 + hh / 2, u2 + k1 * (hh / 2.0));
-    k3 = f(p, x2 + hh / 2, u2 + k2 * (hh / 2.0));
-    k4 = f(p, x2 + hh, u2 + k3 * hh);
-
-    return u2 + (k1 + k2 * 2 + k3 * 2 + k4) * (hh / 6.0);
+    std::vector<double> u1 = rk(p, x, u, hh, f);
+    double x1 = x + hh;
+    return rk(p, x1, u1, hh, f);
 }
 
 std::vector<double> rkv(double& p, double& x, std::vector<double>& u, double& h, double& ele, double& epsilon, int& C1, int& C2, std::vector<double>(*f)(double, double, std::vector<double>)) {
@@ -146,11 +118,9 @@ std::vector<double> rkv(double& p, double& x, std::vector<double>& u, double& h,
         return rkv(p, x, u, h, ele, epsilon, C1, C2, f);
     }
     else if (ele < epsilon / 32) {
-        if (h < 0.01) {
-            h *= 2;
-            C2++;
-        }
-        return u1 + (S * 16);
+        h *= 2;
+        C2++;
+        return u1;
     }
-    else return u1 + (S * 16);
+    else return u1;
 }
