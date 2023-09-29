@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
-#include <fstream>  
+#include <fstream>
 #include <sstream>
 
 
@@ -17,10 +17,10 @@ void calculateTask1(double a, double b, double u, int Nmax, double epsilon, doub
     int C1 = 0;
     int C2 = 0;
     double maxele = 0;
-    double maxh = 0;
-    double xmaxh = 0;
-    double minh = 0;
-    double xminh = 0;
+    double maxh = h;
+    double xmaxh = a;
+    double minh = h;
+    double xminh = a;
     int i = 0;
     double maxdev = 0;
     double xmaxdev = 0;
@@ -39,37 +39,36 @@ void calculateTask1(double a, double b, double u, int Nmax, double epsilon, doub
 
             outputFile << i + 1 << "," << x << "," << u1 << "," << u2 << "," << u1 - u2 << "," << ele << "," << h << "," << C1 << "," << C2 << "," << ue << "," << abs(ue - u1) << "\n";
         }
-        summary << "n" << "," << "b - xn" << "," << "max|OLP|" << "," << "max|ui-vi|" << "," << "pri x" << "\n";
         summary << i << "," << b - x << "," << maxele << "," << maxdev << "," << xmaxdev << "\n";
     }
     else {
         for (; x <= b - 0.01 && i < Nmax; i++) {
             double lasth = h;
+            int c1 = C1;
+            int c2 = C2;
             u1 = rkv(parameter, x, u, h, ele, epsilon, C1, C2, f0);
-            u2 = rkh(parameter, x, u, h, f0);   
+            u2 = rkh(parameter, x, u, h, f0);
             ue = f0sol(x + h, u_0);
 
             if (maxele < abs(ele)) { maxele = abs(ele); }
             if (maxh < h) { maxh = h; xmaxh = x; }
             if (minh > h) { minh = h; xminh = x; }
             if (maxdev < abs(ue - u1)) { maxdev = abs(ue - u1); xmaxdev = x; }
-
-            if (lasth < h) {
+            if (c1 == (C1 - 1) && c2 == (C2 - 1)) {
+                lasth = h / 2;
+                u2 = rkh(parameter, x, u, lasth, f0);
+                x += lasth;
+            } else if (lasth < h) {
                 ue = f0sol(x + lasth, u_0);
                 u2 = rkh(parameter, x, u, lasth, f0);
-            }
-
-            x += h;
-            u = u1; 
-
-            if (lasth < h) x -= lasth;
-            
+                x += lasth;
+            } else x += h;
+            u = u1;
 
             outputFile << i + 1 << "," << x << "," << u1 << "," << u2 << "," << u1 - u2 << "," << ele << "," << h << "," << C1 << "," << C2 << "," << ue << "," << abs(ue - u1) << "\n";
             
             if (h < 0.0000001) break;
         }
-        summary << "n" << "," << "b - xn" << "," << "max|OLP|" << "," << "/2" << "," << "x2" << "," << "max hi" << "," << "max xh" << "," << "min hi" << "," << "min xh" <<  "," << "max|ui-vi|" << "," << "pri x" << "\n";
         summary << i << "," << b - x << "," << maxele << "," << C1 << "," << C2 << "," << maxh << "," << xmaxh << "," << minh << "," << xminh << "," << maxdev << "," << xmaxdev << "\n";
     }
 }
@@ -83,10 +82,10 @@ void calculateTask2(double a, double b, double u, int Nmax, double epsilon, doub
     int C1 = 0;
     int C2 = 0;
     double maxele = 0;
-    double maxh = 0;
-    double xmaxh = 0;
-    double minh = 0;
-    double xminh = 0;
+    double maxh = h;
+    double xmaxh = a;
+    double minh = h;
+    double xminh = a;
     int i = 0;
     if (conststep == 1) {
         for (; x <= b - 0.01 && i < Nmax; i++) {
@@ -96,28 +95,42 @@ void calculateTask2(double a, double b, double u, int Nmax, double epsilon, doub
             ele = abs(u1 - u2) / 15;
             if (maxele < ele) { maxele = ele; }
 
-            outputFile << i + 1 << "," << x << "," << u1 << "," << u2 << "," << u1 - u2 << "," << ele << "," << h << "," << C1 << "," << C2 << "\n";
             x += h;
             u = u1;
+
+            outputFile << i + 1 << "," << x << "," << u1 << "," << u2 << "," << u1 - u2 << "," << ele << "," << h << "," << C1 << "," << C2 << "\n";
         }
-        summary << "n" << "," << "b - xn" << "," << "max|OLP|" << "\n";
         summary << i << "," << b - x << "," << maxele << "\n";
     }
     else {
         for (; x <= b - 0.01 && i < Nmax; i++) {
+            double lasth = h;
+            int c1 = C1;
+            int c2 = C2;
             u1 = rkv(parameter, x, u, h, ele, epsilon, C1, C2, f1);
-            u2 = rkh(parameter, x, u, h, f1);
-
+            
             if (maxele < ele) { maxele = ele; }
             if (maxh < h) { maxh = h; xmaxh = x; }
             if (minh > h) { minh = h; xminh = x; }
+            if (c1 == C1 - 1 && c2 == C2 - 1) {
+                lasth = h / 2;
+                u2 = rkh(parameter, x, u, lasth, f1);
+                x += lasth;
+            }
+            else if (lasth < h){ 
+                u2 = rkh(parameter, x, u, lasth, f1);
+                x += lasth;
+            }
+            else { 
+                x += h; 
+                u2 = rkh(parameter, x, u, h, f1);
+            }
+            u = u1;
 
             outputFile << i + 1 << "," << x << "," << u1 << "," << u2 << "," << u1 - u2 << "," << ele << "," << h << "," << C1 << "," << C2 << "\n";
-            x += h;
-            u = u1;
+            
             if (h < 0.0000001) break;
         }
-        summary << "n" << "," << "b - xn" << "," << "max|OLP|" << "," << "/2" << "," << "x2" << "," << "max hi" << "," << "max xh" << "," << "min hi" << "," << "min xh" << "\n";
         summary << i << "," << b - x << "," << maxele << "," << C1 << "," << C2 << "," << maxh << "," << xmaxh << "," << minh << "," << xminh << "\n";
     }
 }
@@ -128,10 +141,10 @@ void calculateTask3(double parameter, double a, double b, double u, double du, i
     int C1 = 0;
     int C2 = 0;
     double maxele = 0;
-    double maxh = 0;
-    double xmaxh = 0;
-    double minh = 0;
-    double xminh = 0;
+    double maxh = h;
+    double xmaxh = a;
+    double minh = h;
+    double xminh = a;
     int i = 0;
     std::vector<double> uv = { u, du };
     std::vector<double> uv1;
@@ -145,30 +158,44 @@ void calculateTask3(double parameter, double a, double b, double u, double du, i
                 if (maxele < ele) { maxele = ele; }
             }
 
-            outputFile << i + 1 << "," << x << "," << uv1[0] << "," << uv1[1] << "," << u1d[0] << "," << u1d[1] << "," << uv1[0] - u1d[0] << "," << ele << "," << h << "," << C1 << "," << C2 << "\n";
             x += h;
             uv = uv1;
+
+            outputFile << i + 1 << "," << x << "," << uv1[0] << "," << uv1[1] << "," << u1d[0] << "," << u1d[1] << "," << uv1[0] - u1d[0] << "," << uv1[1] - u1d[1] << "," << ele << "," << h << "," << C1 << "," << C2 << "\n";
         }
-        summary << "n" << "," << "b - xn" << "," << "max|OLP|" << "\n";
         summary << i << "," << b - x << "," << maxele << "\n";
     }
     else {
         for (; x <= b - 0.01 && i < Nmax; i++) {
+            double lasth = h;  
+            int c1 = C1;
+            int c2 = C2;
             uv1 = rkv(parameter, x, uv, h, ele, epsilon, C1, C2, f2);
-
+            std::vector<double> u1d(uv1.size());
             if (maxele < ele) { maxele = ele; }
             if (maxh < h) { maxh = h; xmaxh = x; }
             if (minh > h) { minh = h; xminh = x; }
 
-            std::vector<double> u1d = rkh(parameter, x, uv, h, f2);
-
-            outputFile << i + 1 << "," << x << "," << uv1[0] << "," << uv1[1] << "," << u1d[0] << "," << u1d[1] << "," << abs(uv1[0] - u1d[0]) << "," << ele << "," << h << "," << C1 << "," << C2 << "\n";
-            x += h;
+            if (c1 == C1 - 1 && c2 == C2 - 1) {
+                lasth = h / 2;
+                u1d = rkh(parameter, x, uv, lasth, f2);
+                x += lasth;
+            }
+            if (lasth < h) {
+                u1d = rkh(parameter, x, uv, lasth, f2);
+                x += lasth;
+            }
+            else {
+                x += h;
+                u1d = rkh(parameter, x, uv, h, f2);
+            }
             uv = uv1;
+
+            outputFile << i + 1 << "," << x << "," << uv1[0] << "," << uv1[1] << "," << u1d[0] << "," << u1d[1] << "," << uv1[0] - u1d[0] << "," << uv1[1] - u1d[1] << "," << ele << "," << h << "," << C1 << "," << C2 << "\n";
+            
             if (h < 0.0000001) break;
         }
-        summary << "n" << "," << "b - xn" << "," << "max|OLP|" << "," << "/2" << "," << "x2" << "," << "max hi" << "," << "max xh" << "," << "min hi" << "," << "min xh" << "\n";
-        summary << i << "," << b - x << "," << maxele << "," << C1 << "," << C2 << ","  << maxh<< "," << xmaxh << "," << minh << "," << xminh << "\n";
+        summary << i << "," << b - x << "," << maxele << "," << C1 << "," << C2 << "," << maxh<< "," << xmaxh << "," << minh << "," << xminh << "\n";
     }
 }
 

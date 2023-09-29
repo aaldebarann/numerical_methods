@@ -14,13 +14,13 @@ class IntegrationApp:
         self.top_left_panel = ttk.LabelFrame(root, text="Выбор параметров")
         self.top_left_panel.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         
-        self.top_right_panel = ttk.LabelFrame(root, text="Результаты")
+        self.top_right_panel = ttk.LabelFrame(root, text="Сводка")
         self.top_right_panel.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
         
-        self.bottom_left_panel = ttk.LabelFrame(root, text="Графики")
+        self.bottom_left_panel = ttk.LabelFrame(root, text="График")
         self.bottom_left_panel.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
         
-        self.bottom_right_panel = ttk.LabelFrame(root, text="Сводка")
+        self.bottom_right_panel = ttk.LabelFrame(root, text="Результаты")
         self.bottom_right_panel.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
    
         self.create_top_left_panel()
@@ -104,13 +104,10 @@ class IntegrationApp:
         
         self.clear_button = ttk.Button(self.top_left_panel, text="Очистить график", command=self.clear_plot)
         self.clear_button.grid(row=10, column=1)
-
     
     def create_top_right_panel(self):
-        self.results_label = ttk.Label(self.top_right_panel, text="Результаты:")
-        self.results_label.grid(row=0, column=0)
-        self.notebook = ttk.Notebook(self.top_right_panel)
-        self.notebook.grid(row=0, column=0, sticky="nsew")
+        self.summary_label = ttk.Label(self.top_right_panel, text="Сводка:")
+        self.summary_label.grid(row=0, column=0)
 
     def create_bottom_left_panel(self):
         self.fig, self.ax = plt.subplots(figsize=(6, 4))
@@ -118,8 +115,10 @@ class IntegrationApp:
         self.canvas.get_tk_widget().pack()
     
     def create_bottom_right_panel(self):
-        self.summary_label = ttk.Label(self.bottom_right_panel, text="Сводка:")
-        self.summary_label.grid(row=0, column=0)
+        self.results_label = ttk.Label(self.bottom_right_panel, text="Результаты:")
+        self.results_label.grid(row=0, column=0)
+        self.notebook = ttk.Notebook(self.bottom_right_panel)
+        self.notebook.grid(row=0, column=0, sticky="nsew")
         
     def run_integration(self):
         task = self.task_var.get()
@@ -134,18 +133,18 @@ class IntegrationApp:
         parameter = self.parameter_var.get()
         m = 0
         t = 1
-        
-        if(method == "С постоянным шагом"):
+        if method == "С постоянным шагом":
             m = 1
         if task == "Тестовая":
-            columns = ["i", "x", "u1", "u2", "u1 - u2", "ОЛП", "h", "x2", "/2", "ue", "|ue - u1|"]
+            columns = ["i", "x_i", "v_i", "v2_i", "v_i - v2_i", "ОЛП", "h_i", "C1", "C2", "u_i", "|u_i - v_i|"]
         if task == "Первая":
             t = 2
-            columns = ["i", "x", "u1", "u2", "u1 - u2", "ОЛП", "h", "x2", "/2"]
+            columns = ["i", "x_i", "v_i", "v2_i", "v_i - v2_i", "ОЛП", "h_i", "C1", "C2"]
         elif task == "Вторая":
             t = 3
-            columns = ["i", "x", "u1", "u2", "u1 - u2", "ОЛП", "h", "x2", "/2"]
+            columns = ["i", "x_i", "dv_i", "v_i", "dv2_i", "v2_i", "dv_i - dv2_i", "v_i - v2_i", "ОЛП", "h_i", "C1", "C2"]
         
+        style = (t, m)
         with open("input_params.txt", "w", encoding="utf-8") as params_file:
             params_file.write(f"{start} {end} {initial_condition} {precision} {step} {max_steps} {t} {m} {second_initial_condition} {parameter}")
         
@@ -159,7 +158,7 @@ class IntegrationApp:
                 result_tree.insert("", "end", values=values)
                 
             self.create_plots()
-            self.create_summary_table()
+            self.create_summary_table(style)
     
     def create_plots(self):
         x = []
@@ -178,13 +177,13 @@ class IntegrationApp:
                     y2.append(float(row[3]))
         
         if task == "Тестовая":
-            self.ax.plot(x, y1, label="Тестовая численная")
-            self.ax.plot(x, y2, label="Тестовая истинная")
+            self.ax.plot(x, y1, 'o', markersize = 1, label="Тестовая численная")
+            self.ax.plot(x, y2, 'o', markersize = 1, label="Тестовая истинная")
         elif task == "Первая":
-            self.ax.plot(x, y1, label="Первая")
+            self.ax.plot(x, y1, 'o', markersize = 1, label="Первая")
         elif task == "Вторая":
-            self.ax.plot(x, y1, label="Вторая (производная)")
-            self.ax.plot(x, y2, label="Вторая")
+            self.ax.plot(x, y1, 'o', markersize = 1, label="Вторая (производная)")
+            self.ax.plot(x, y2, 'o', markersize = 1, label="Вторая")
             self.open_new_graph(y1, y2)
             
         
@@ -204,14 +203,15 @@ class IntegrationApp:
         self.ax.set_ylabel('u')
         self.ax.set_title('График функции')
         self.ax.grid(True)
-        self.ax.legend(loc='upper left', title="Легенда")
-        self.canvas.draw()   
+        self.canvas.draw()
         for i in range(self.notebook.index("end") - 1, -1, -1):
             self.notebook.forget(i)
+                
         
     def create_result_tab(self, columns):
         result_tab = ttk.Frame(self.notebook)
-        self.notebook.add(result_tab, text="Результаты")
+        counter = self.notebook.index("end") + 1
+        self.notebook.add(result_tab, text=f"{counter}")
         result_tree = ttk.Treeview(result_tab, columns=columns, show="headings")
         for column in columns:
             result_tree.heading(column, text=column)
@@ -220,24 +220,32 @@ class IntegrationApp:
 
         return result_tree
 
-    def create_summary_table(self):
-        summary_tab = ttk.Frame(self.bottom_right_panel)
+    def create_summary_table(self, style):
+        summary_tab = ttk.Frame(self.top_right_panel)
         summary_tab.grid(row=0, column=0, sticky="nsew")
         summary_tree = ttk.Treeview(summary_tab, show="headings")
         summary_tree.pack(fill=tk.BOTH, expand=True)
-    
+        if style == (1, 1):
+            headers = ["n", "b - x_n", "max|ОЛП|", "max|u_i - v_i|", "x"]
+        elif style == (1, 0):
+            headers = ["n", "b - x_n", "max|ОЛП|", "C1", "C2", "max h_i", "х", "min h_i", "х", "max|u_i - v_i|", "x"]
+        elif style == (2, 0) or style == (3, 0):
+            headers = ["n", "b - x_n", "max|ОЛП|", "C1", "C2", "max h_i", "х", "min h_i", "х"]   
+        elif style == (2, 1) or style == (3, 1):
+            headers = ["n", "b - x_n", "max|ОЛП|"]
+            
         try:
             with open('summary.csv', 'r') as file:
                 reader = csv.reader(file)
-                headers = next(reader)
                 summary_tree["columns"] = headers
                 for header in headers:
                     summary_tree.heading(header, text=header)
-                    summary_tree.column(header, width=80)
+                    summary_tree.column(header, width = 80)
                 for row in reader:
                     summary_tree.insert("", "end", values=row)
+    
         except FileNotFoundError:
-            pass
+            print("Файл 'summary.csv' не найден")
     
         return summary_tree
     
@@ -249,7 +257,7 @@ class IntegrationApp:
         new_canvas = FigureCanvasTkAgg(new_fig, master=new_window)
         new_canvas.get_tk_widget().pack()
 
-        new_ax.plot(u, v)
+        new_ax.plot(u, v, 'o', markersize = 1,)
 
         new_ax.set_xlabel('u')
         new_ax.set_ylabel('u\'')

@@ -46,7 +46,7 @@ double f1(double p, double x, double u) {
 std::vector<double> f2(double p, double x, std::vector<double> u) {
     std::vector<double> result(2);
     result[0] = u[1];
-    result[1] = -p * sin(u[0]);
+    result[1] = - p * sin(u[0]);
     return result;
 }
 
