@@ -47,22 +47,25 @@ void calculateTask1(double a, double b, double u, int Nmax, double epsilon, doub
             int c1 = C1;
             int c2 = C2;
             u1 = rkv(parameter, x, u, h, ele, epsilon, C1, C2, f0);
-            u2 = rkh(parameter, x, u, h, f0);
-            ue = f0sol(x + h, u_0);
 
             if (maxele < abs(ele)) { maxele = abs(ele); }
             if (maxh < h) { maxh = h; xmaxh = x; }
             if (minh > h) { minh = h; xminh = x; }
-            if (maxdev < abs(ue - u1)) { maxdev = abs(ue - u1); xmaxdev = x; }
             if (c1 == (C1 - 1) && c2 == (C2 - 1)) {
                 lasth = h / 2;
-                u2 = rkh(parameter, x, u, lasth, f0);
+                u2 = rkh(parameter, x, u, lasth, f0); 
+                ue = f0sol(x + lasth, u_0);
                 x += lasth;
             } else if (lasth < h) {
                 ue = f0sol(x + lasth, u_0);
                 u2 = rkh(parameter, x, u, lasth, f0);
                 x += lasth;
-            } else x += h;
+            } else  {
+                ue = f0sol(x + h, u_0);
+                u2 = rkh(parameter, x, u, h, f0); 
+                x += h;
+            }
+            if (maxdev < abs(ue - u1)) { maxdev = abs(ue - u1); xmaxdev = x; }
             u = u1;
 
             outputFile << i + 1 << "," << x << "," << u1 << "," << u2 << "," << u1 - u2 << "," << ele << "," << h << "," << C1 << "," << C2 << "," << ue << "," << abs(ue - u1) << "\n";
@@ -122,8 +125,8 @@ void calculateTask2(double a, double b, double u, int Nmax, double epsilon, doub
                 x += lasth;
             }
             else { 
-                x += h; 
                 u2 = rkh(parameter, x, u, h, f1);
+                x += h;
             }
             u = u1;
 
@@ -186,8 +189,8 @@ void calculateTask3(double parameter, double a, double b, double u, double du, i
                 x += lasth;
             }
             else {
-                x += h;
                 u1d = rkh(parameter, x, uv, h, f2);
+                x += h;
             }
             uv = uv1;
 
