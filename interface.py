@@ -4,7 +4,6 @@ import subprocess
 import csv
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import mplcursors
 
 class IntegrationApp:
     def __init__(self, root):
@@ -71,39 +70,46 @@ class IntegrationApp:
         self.precision_entry.grid(row=5, column=1)
         self.precision_var.set("0.0001")
         
+        self.epsilonb_label = ttk.Label(self.top_left_panel, text="Выход на границу:")
+        self.epsilonb_label.grid(row=6, column=0, sticky="w")
+        self.epsilonb = tk.DoubleVar()
+        self.epsilonb_entry = ttk.Entry(self.top_left_panel, textvariable=self.epsilonb)
+        self.epsilonb_entry.grid(row=6, column=1)
+        self.epsilonb.set("0.0001")
+        
         self.max_steps_label = ttk.Label(self.top_left_panel, text="Максимальное количество шагов:")
-        self.max_steps_label.grid(row=6, column=0, sticky="w")
+        self.max_steps_label.grid(row=7, column=0, sticky="w")
         self.max_steps_var = tk.IntVar()
         self.max_steps_entry = ttk.Entry(self.top_left_panel, textvariable=self.max_steps_var)
-        self.max_steps_entry.grid(row=6, column=1)
+        self.max_steps_entry.grid(row=7, column=1)
         self.max_steps_var.set("1000000")
         
         self.initial_condition_label = ttk.Label(self.top_left_panel, text="Начальное условие для u:")
-        self.initial_condition_label.grid(row=7, column=0, sticky="w")
+        self.initial_condition_label.grid(row=8, column=0, sticky="w")
         self.initial_condition_var = tk.DoubleVar()
         self.initial_condition_entry = ttk.Entry(self.top_left_panel, textvariable=self.initial_condition_var)
-        self.initial_condition_entry.grid(row=7, column=1)
+        self.initial_condition_entry.grid(row=8, column=1)
         self.initial_condition_var.set("1")
         
         self.second_initial_condition_label = ttk.Label(self.top_left_panel, text="Второе начальное условие для u':")
-        self.second_initial_condition_label.grid(row=8, column=0, sticky="w")
+        self.second_initial_condition_label.grid(row=9, column=0, sticky="w")
         self.second_initial_condition_var = tk.DoubleVar()
         self.second_initial_condition_entry = ttk.Entry(self.top_left_panel, textvariable=self.second_initial_condition_var)
-        self.second_initial_condition_entry.grid(row=8, column=1)
+        self.second_initial_condition_entry.grid(row=9, column=1)
         self.second_initial_condition_var.set("0")
         
         self.parameter_label = ttk.Label(self.top_left_panel, text="Значение параметра:")
-        self.parameter_label.grid(row=9, column=0, sticky="w")
+        self.parameter_label.grid(row=10, column=0, sticky="w")
         self.parameter_var = tk.DoubleVar()
         self.parameter_entry = ttk.Entry(self.top_left_panel, textvariable=self.parameter_var)
-        self.parameter_entry.grid(row=9, column=1)
+        self.parameter_entry.grid(row=10, column=1)
         self.parameter_var.set("1")
         
         self.run_button = ttk.Button(self.top_left_panel, text="Выполнить", command=self.run_integration)
-        self.run_button.grid(row=10, column=0)
+        self.run_button.grid(row=11, column=0)
         
         self.clear_button = ttk.Button(self.top_left_panel, text="Очистить график", command=self.clear_plot)
-        self.clear_button.grid(row=10, column=1)
+        self.clear_button.grid(row=11, column=1)
     
     def create_top_right_panel(self):
         self.summary_label = ttk.Label(self.top_right_panel, text="Сводка:")
@@ -127,6 +133,7 @@ class IntegrationApp:
         end = self.end_var.get()
         step = self.step_var.get()
         precision = self.precision_var.get()
+        epsilonb = self.epsilonb.get()
         max_steps = self.max_steps_var.get()
         initial_condition = self.initial_condition_var.get()
         second_initial_condition = self.second_initial_condition_var.get()
@@ -136,29 +143,37 @@ class IntegrationApp:
         if method == "С постоянным шагом":
             m = 1
         if task == "Тестовая":
-            columns = ["i", "x_i", "v_i", "v2_i", "v_i - v2_i", "ОЛП", "h_i", "C1", "C2", "u_i", "|u_i - v_i|"]
+            columns = ["i", "x", "v", "v2", "v - v2", "ОЛП", "h", "C1", "C2", "u", "|u - v|"]
         if task == "Первая":
             t = 2
-            columns = ["i", "x_i", "v_i", "v2_i", "v_i - v2_i", "ОЛП", "h_i", "C1", "C2"]
+            columns = ["i", "x", "v", "v2", "v - v2", "ОЛП", "h", "C1", "C2"]
         elif task == "Вторая":
             t = 3
-            columns = ["i", "x_i", "dv_i", "v_i", "dv2_i", "v2_i", "dv_i - dv2_i", "v_i - v2_i", "ОЛП", "h_i", "C1", "C2"]
+            columns = ["i", "x", "dv", "dv2", "dv - dv2", "ОЛП", "h", "C1", "C2"]
+            columns1 = ["i", "x","v", "v2", "v - v2", "ОЛП", "h", "C1", "C2"]
         
         style = (t, m)
         with open("input_params.txt", "w", encoding="utf-8") as params_file:
-            params_file.write(f"{start} {end} {initial_condition} {precision} {step} {max_steps} {t} {m} {second_initial_condition} {parameter}")
+            params_file.write(f"{start} {end} {initial_condition} {precision} {epsilonb} {step} {max_steps} {t} {m} {second_initial_condition} {parameter}")
         
         subprocess.run(["./labwork1.exe"], check=True)
         with open('results.csv', 'r') as file:
             reader = csv.reader(file)
             result_tree = self.create_result_tab(columns)
-                
             for row in reader:
                 values = [float(value) for value in row[0:]]
                 result_tree.insert("", "end", values=values)
                 
-            self.create_plots()
-            self.create_summary_table(style)
+        if task == "Вторая":
+            with open('results2.csv', 'r') as file1:
+                reader = csv.reader(file1)
+                result_tree = self.create_result_tab(columns1)
+                for row in reader:
+                    values = [float(value) for value in row[0:]]
+                    result_tree.insert("", "end", values=values)
+                    
+        self.create_plots()
+        self.create_summary_table(style)
     
     def create_plots(self):
         x = []
@@ -173,17 +188,20 @@ class IntegrationApp:
                 y1.append(float(row[2]))
                 if task == "Тестовая":
                     y2.append(float(row[9]))
-                if task == "Вторая":
-                    y2.append(float(row[3]))
+        if task == "Вторая":
+            with open('results2.csv', 'r') as file:
+                reader = csv.reader(file)
+                for row in reader:
+                    y2.append(float(row[2]))
         
         if task == "Тестовая":
-            self.ax.plot(x, y1, 'o', markersize = 1, label="Тестовая численная")
-            self.ax.plot(x, y2, 'o', markersize = 1, label="Тестовая истинная")
+            self.ax.plot(x, y1, label="Тестовая численная")
+            self.ax.plot(x, y2, label="Тестовая истинная")
         elif task == "Первая":
-            self.ax.plot(x, y1, 'o', markersize = 1, label="Первая")
+            self.ax.plot(x, y1, label="Первая")
         elif task == "Вторая":
-            self.ax.plot(x, y1, 'o', markersize = 1, label="Вторая (производная)")
-            self.ax.plot(x, y2, 'o', markersize = 1, label="Вторая")
+            self.ax.plot(x, y1, label="Вторая (производная)")
+            self.ax.plot(x, y2, label="Вторая")
             self.open_new_graph(y1, y2)
             
         
@@ -194,9 +212,7 @@ class IntegrationApp:
         self.ax.legend(loc='upper left', title="Легенда")
         self.canvas.draw()
     
-        cursor = mplcursors.cursor(self.ax, hover=True)
-        cursor.connect("add", lambda sel: sel.annotation.set_text(f"x={sel.target[0]:.2f}, y={sel.target[1]:.2f}"))
-        
+       
     def clear_plot(self):
         self.ax.clear()
         self.ax.set_xlabel('x')
@@ -226,13 +242,13 @@ class IntegrationApp:
         summary_tree = ttk.Treeview(summary_tab, show="headings")
         summary_tree.pack(fill=tk.BOTH, expand=True)
         if style == (1, 1):
-            headers = ["n", "b - x_n", "max|ОЛП|", "max|u_i - v_i|", "x"]
+            headers = ["Шагов", "До границы", "max|ОЛП|", "max|u_i - v_i|", "x"]
         elif style == (1, 0):
-            headers = ["n", "b - x_n", "max|ОЛП|", "C1", "C2", "max h_i", "х", "min h_i", "х", "max|u_i - v_i|", "x"]
+            headers = ["Шагов", "До границы", "max|ОЛП|", "Делений", "Удвоений", "Наиб. шаг", "х1", "Наим. шаг", "х2", "max|u_i - v_i|", "x3"]
         elif style == (2, 0) or style == (3, 0):
-            headers = ["n", "b - x_n", "max|ОЛП|", "C1", "C2", "max h_i", "х", "min h_i", "х"]   
+            headers = ["Шагов", "До границы", "max|ОЛП|", "Делений", "Удвоений", "Наиб. шаг", "х1", "Наим. шаг", "х2"]   
         elif style == (2, 1) or style == (3, 1):
-            headers = ["n", "b - x_n", "max|ОЛП|"]
+            headers = ["Шагов", "До границы", "max|ОЛП|"]
             
         try:
             with open('summary.csv', 'r') as file:
@@ -257,7 +273,7 @@ class IntegrationApp:
         new_canvas = FigureCanvasTkAgg(new_fig, master=new_window)
         new_canvas.get_tk_widget().pack()
 
-        new_ax.plot(u, v, 'o', markersize = 1,)
+        new_ax.plot(u, v)
 
         new_ax.set_xlabel('u')
         new_ax.set_ylabel('u\'')
