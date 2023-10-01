@@ -45,8 +45,8 @@ double f1(double p, double x, double u) {
 
 std::vector<double> f2(double p, double x, std::vector<double> u) {
     std::vector<double> result(2);
-    result[0] = u[1];
-    result[1] = - p * sin(u[0]);
+    result[0] =  - p * sin(u[1]);
+    result[1] =  u[0];
     return result;
 }
 
@@ -80,10 +80,14 @@ double rkv(double& p, double& x, double& u, double& h, double& ele, double& epsi
     else if (ele < epsilon / 32) {
         h *= 2;
         C2++;
+        ele *= 16;
         return u1;
     }
-    else return u1;
-} 
+    else {
+        ele *= 16;
+        return u1;
+    }
+}
 
 std::vector<double> rk(double& p, double& x, std::vector<double>& u, double& h, std::vector<double> (*f)(double, double, std::vector<double>)) {
     std::vector<double> k1, k2, k3, k4;
@@ -103,24 +107,27 @@ std::vector<double> rkh(double& p, double& x, std::vector<double>& u, double& h,
     return rk(p, x1, u1, hh, f);
 }
 
-std::vector<double> rkv(double& p, double& x, std::vector<double>& u, double& h, double& ele, double& epsilon, int& C1, int& C2, std::vector<double>(*f)(double, double, std::vector<double>)) {
+std::vector<double> rkv(double& p, double& x, std::vector<double>& u, double& h, std::vector<double>& ele, double& epsilon, int& C1, int& C2, std::vector<double>(*f)(double, double, std::vector<double>)) {
     std::vector<double> u1 = rk(p, x, u, h, f);
     std::vector<double> u2 = rkh(p, x, u, h, f);
-    std::vector<double> S(u.size());
-    ele = 0;
+    double dele = 0;
     for (int i = 0; i < u1.size(); i++) {
-        S[i] = (u2[i] - u1[i]) / 15;
-        if (ele < abs(S[i])) ele = abs(S[i]);
+        ele[i] = abs(u2[i] - u1[i]) / 15;
+        if (dele < ele[i]) dele = ele[i];
     }
-    if (ele > epsilon) {
+    if (dele > epsilon) {
         h /= 2;
         C1++;
         return rkv(p, x, u, h, ele, epsilon, C1, C2, f);
     }
-    else if (ele < epsilon / 32) {
+    else if (dele < epsilon / 32) {
         h *= 2;
         C2++;
+        ele = ele * 16;
         return u1;
     }
-    else return u1;
+    else {
+        ele = ele * 16;
+        return u1;
+    }
 }
