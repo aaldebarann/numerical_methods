@@ -115,6 +115,32 @@ MainWindow::~MainWindow()
 {
 }
 
+//a, b, c, phi: n - 2; result: n;
+void run(double ae1, double mu1, double ae2, double mu2, std::vector<double>& a, std::vector<double>& b, std::vector<double>& c, std::vector<double>& phi, std::vector<double>& result) {
+    std::vector<double> alpha;
+    std::vector<double> beta;
+
+    alpha.push_back(ae1);
+    beta.push_back(mu1);
+
+    for (int i = 0; i < phi.size(); i++) {
+        alpha.push_back(b[i] / (c[i] - a[i] * alpha[i]));
+        beta.push_back((phi[i] + a[i]) / (c[i] - alpha[i] * a[i]));
+    }
+    int n = alpha.size();
+
+    result[n] = (mu2 + ae2 * beta[n - 1]) / (1.0 - alpha[n - 1]);
+    for (int i = n - 1; i >= 0; i--) {
+        result[i] = alpha[i] * result[i + 1] + beta[i];
+    }
+}
+
+void buildLES(int n, double& ae1, double& mu1, double& ae2, double& mu2, std::vector<double>& a, std::vector<double>& b, std::vector<double>& c, std::vector<double>& phi) {
+    /*
+    составление схемы
+    */
+}
+
 void MainWindow::onTask1Clicked(){
     n = grid->text().toInt();
     QSplineSeries *series = new QSplineSeries();
@@ -137,7 +163,7 @@ void MainWindow::onTask1Clicked(){
     //for (int i = 0; i < n + 1; i++){
     //    series->append(point.x, point.v);
     //    seriesve->append(point.x, point.u);
-    //    pseries->appedn(point.x, point.v - point.u);
+    //    pseries->append(point.x, point.v - point.u);
     //    tableWidget->insertRow(tableWidget->rowCount());
     //    tableWidget->setItem(tableWidget->rowCount() - 1, 0, new QTableWidgetItem(QString::number(point.x)));
     //    tableWidget->setItem(tableWidget->rowCount() - 1, 1, new QTableWidgetItem(QString::number(point.v)));
@@ -145,6 +171,22 @@ void MainWindow::onTask1Clicked(){
     //    tableWidget->setItem(tableWidget->rowCount() - 1, 3, new QTableWidgetItem(QString::number(point.v - point.u)));
     //}
 
+    double ae1;
+    double mu1;
+    double ae2;
+    double mu2;
+    std::vector<double> a;
+    std::vector<double> b; 
+    std::vector<double> c;
+    std::vector<double> phi;
+    std::vector<double> y;
+    std::vector<double> y2;
+    double eps = 10e-6;
+
+    buildLES(n, &ae1, &mu1, &ae2, &mu2, &a, &b, &c, &phi);
+    run(ae1, mu1, ae2, mu2, &a, &b. &c, &phi, &y);
+    buildLES(n * 2, &ae1, &mu1, &ae2, &mu2, &a, &b, &c, &phi);
+    run(ae1, mu1, ae2, mu2, &a, &b. & c, &phi, &y2);
 
     pseries->setName("Погрешность " + QString::number(tabCounter));
     pchart->addSeries(pseries);
