@@ -17,8 +17,8 @@
 #include <QtCharts/QSplineSeries>
 #include <QtCharts/QValueAxis>
 #include <iostream>
-#include <vector>
 #include <cmath>
+#include "solver.h"
 
 
 class MainWindow : public QMainWindow

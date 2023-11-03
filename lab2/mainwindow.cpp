@@ -115,6 +115,8 @@ MainWindow::~MainWindow()
 {
 }
 
+
+
 void MainWindow::onTask1Clicked(){
     n = grid->text().toInt();
     QSplineSeries *series = new QSplineSeries();
@@ -137,7 +139,7 @@ void MainWindow::onTask1Clicked(){
     //for (int i = 0; i < n + 1; i++){
     //    series->append(point.x, point.v);
     //    seriesve->append(point.x, point.u);
-    //    pseries->appedn(point.x, point.v - point.u);
+    //    pseries->append(point.x, point.v - point.u);
     //    tableWidget->insertRow(tableWidget->rowCount());
     //    tableWidget->setItem(tableWidget->rowCount() - 1, 0, new QTableWidgetItem(QString::number(point.x)));
     //    tableWidget->setItem(tableWidget->rowCount() - 1, 1, new QTableWidgetItem(QString::number(point.v)));
@@ -145,6 +147,24 @@ void MainWindow::onTask1Clicked(){
     //    tableWidget->setItem(tableWidget->rowCount() - 1, 3, new QTableWidgetItem(QString::number(point.v - point.u)));
     //}
 
+    double ae1;
+    double mu1;
+    double ae2;
+    double mu2;
+    std::vector<double> a;
+    std::vector<double> b; 
+    std::vector<double> c;
+    std::vector<double> phi;
+    std::vector<double> y;
+    std::vector<double> y2;
+    double eps = 10e-6;
+
+    buildLES(n, &ae1, &mu1, &ae2, &mu2, &a, &b, &c, &phi);
+    run(ae1, mu1, ae2, mu2, &a, &b. &c, &phi, &y);
+    buildLES(n * 2, &ae1, &mu1, &ae2, &mu2, &a, &b, &c, &phi);
+    run(ae1, mu1, ae2, mu2, &a, &b. & c, &phi, &y2);
+    //y, y2 - решения с одинарным и удвоенным шагом соответственно
+    //далее - вычислить погрешность и пересчитать, если нужно
 
     pseries->setName("Погрешность " + QString::number(tabCounter));
     pchart->addSeries(pseries);
