@@ -20,8 +20,13 @@ void run(double ae1, double mu1, double ae2, double mu2, std::vector<double>& a,
     }
 }
 
-void buildLES(int n, double& ae1, double& mu1, double& ae2, double& mu2, std::vector<double>& a, std::vector<double>& b, std::vector<double>& c, std::vector<double>& phi) {
-    /*
-    составление схемы
-    */
+void buildLES(int n, double& x_0, double& x_n, std::vector<double>& a, std::vector<double>& b, std::vector<double>& c, std::vector<double>& phi) {
+    double h = (x_n - x_0) / n;
+    for (int i = 1; i < n; i++) {
+        double x_i = x_0 + i * h;
+        a.push_back(Run_Coeffs::A_i(x_i, h));
+        b.push_back(Run_Coeffs::B_i(x_i, h));
+        c.push_back(Run_Coeffs::C_i(x_i, h));
+        phi.push_back(Run_Coeffs::phi_i(x_i, h));
+    }
 }

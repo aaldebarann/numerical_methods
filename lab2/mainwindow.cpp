@@ -151,6 +151,8 @@ void MainWindow::onTask1Clicked(){
     double mu1;
     double ae2;
     double mu2;
+    double x_0 = 0;
+    double x_n = 1;
     std::vector<double> a;
     std::vector<double> b; 
     std::vector<double> c;
@@ -159,10 +161,10 @@ void MainWindow::onTask1Clicked(){
     std::vector<double> y2;
     double eps = 10e-6;
 
-    buildLES(n, &ae1, &mu1, &ae2, &mu2, &a, &b, &c, &phi);
-    run(ae1, mu1, ae2, mu2, &a, &b. &c, &phi, &y);
-    buildLES(n * 2, &ae1, &mu1, &ae2, &mu2, &a, &b, &c, &phi);
-    run(ae1, mu1, ae2, mu2, &a, &b. & c, &phi, &y2);
+    buildLES(n, x_0, x_n, a, b, c, phi);
+    run(ae1, mu1, ae2, mu2, a, b, c, phi, y);
+    buildLES(n * 2, x_0, x_n, a, b, c, phi);
+    run(ae1, mu1, ae2, mu2, a, b, c, phi, y2);
     //y, y2 - решения с одинарным и удвоенным шагом соответственно
     //далее - вычислить погрешность и пересчитать, если нужно
 

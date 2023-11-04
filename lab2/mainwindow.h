@@ -4,6 +4,7 @@
 #pragma once
 
 #include <QMainWindow>
+#include <QChart>
 #include <QWidget>
 #include <QGridLayout>
 #include <QLineEdit>
@@ -13,13 +14,14 @@
 #include <QLabel>
 #include <QTableWidget>
 #include <QHeaderView>
-#include <QtCharts/QChartView>
-#include <QtCharts/QSplineSeries>
-#include <QtCharts/QValueAxis>
+#include <QChartView>
+#include <QSplineSeries>
+#include <QValueAxis>
 #include <iostream>
 #include <cmath>
 #include "solver.h"
 
+using namespace QtCharts;
 
 class MainWindow : public QMainWindow
 {
