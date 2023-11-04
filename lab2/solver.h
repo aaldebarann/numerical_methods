@@ -23,7 +23,7 @@ public:
             return 1 / 1.4;
         }
         else{
-            return 1 / 0.4;
+            return 1 / (x + 1);
         }
     }
 
