@@ -8,6 +8,7 @@
 #include <QWidget>
 #include <QGridLayout>
 #include <QLineEdit>
+#include <QLineSeries>
 #include <QTextEdit>
 #include <QPushButton>
 #include <QButtonGroup>

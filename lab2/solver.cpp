@@ -10,11 +10,11 @@ void run(double ae1, double mu1, double ae2, double mu2, std::vector<double>& a,
 
     for (int i = 0; i < phi.size(); i++) {
         alpha.push_back(b[i] / (c[i] - a[i] * alpha[i]));
-        beta.push_back((phi[i] + a[i]) / (c[i] - alpha[i] * a[i]));
+        beta.push_back((phi[i] + a[i]*beta[i]) / (c[i] - alpha[i] * a[i]));
     }
     int n = alpha.size();
 
-    result[n] = (mu2 + ae2 * beta[n - 1]) / (1.0 - alpha[n - 1]);
+    result[n] = (mu2 + ae2 * beta[n]) / (1.0 - alpha[n]);
     for (int i = n - 1; i >= 0; i--) {
         result[i] = alpha[i] * result[i + 1] + beta[i];
     }

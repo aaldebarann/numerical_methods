@@ -6,6 +6,12 @@ class Functions{
 public:
     Functions()=default;
     static inline std::string type{"test"};
+    static inline double c1 = 0.06055722286665054583;
+    static inline double c2 = -1.0605572228666505458;
+    static inline double c1_ = -0.47202455073443706013;
+    static inline double c2_ = -4.3310848235800584475;
+
+
     static void set_task(std::string t){
         type = t;
     }
@@ -80,6 +86,15 @@ public:
             return std::exp(-x);
         }
     }
+
+    static double tr_f(double x){
+        if (x <= 0.4 && x >= 0){
+            return (c1 * std::exp(std::sqrt(2.0 / 7.0) * x) + c2 * std::exp(-std::sqrt(2.0 / 7.0) * x) + 1.0);
+        }
+        else if (x > 0.4 && x <= 1.0){
+            return (c1_ * std::exp(2.0 * x / std::sqrt(10.0)) + c2_ * std::exp(-2.0 * x / std::sqrt(10.0)) + std::exp(-0.4)/0.16);
+        }
+    }
 };
 
 
@@ -101,15 +116,15 @@ public:
     Run_Coeffs(){};
 
    static double a_i(const double& x_i, const double& h) {
-        if (x_i + h <= IntegralSolver::gap){
-            return 1 / ((1 / h) * IntegralSolver::trapezoid_method(Functions::k1_, x_i - h, x_i + h));
+        if (x_i <= IntegralSolver::gap){
+            return 1 / ((1 / h) * IntegralSolver::trapezoid_method(Functions::k1_, x_i - h, x_i));
         }
-        else if((x_i - h < IntegralSolver::gap) && (IntegralSolver::gap < x_i + h)){
+        else if((x_i - h < IntegralSolver::gap) && (IntegralSolver::gap < x_i)){
             return 1 / ((1 / h) * (IntegralSolver::trapezoid_method(Functions::k1_, x_i - h, IntegralSolver::gap) +
-                                   IntegralSolver::trapezoid_method(Functions::k2_, IntegralSolver::gap, x_i + h)));
+                                   IntegralSolver::trapezoid_method(Functions::k2_, IntegralSolver::gap, x_i)));
         }
-        else{
-            return 1 / ((1 / h) * IntegralSolver::trapezoid_method(Functions::k2_, x_i - h, x_i + h));
+        else if (x_i - h >= IntegralSolver::gap){
+            return 1 / ((1 / h) * IntegralSolver::trapezoid_method(Functions::k2_, x_i - h, x_i));
         }
     }
 
@@ -121,7 +136,7 @@ public:
             return (1 / h) * (IntegralSolver::trapezoid_method(Functions::f1, x_i - h/2, IntegralSolver::gap) +
                                    IntegralSolver::trapezoid_method(Functions::f2, IntegralSolver::gap, x_i + h/2));
         }
-        else{
+        else if(x_i - h / 2 >= IntegralSolver::gap){
             return (1 / h) * IntegralSolver::trapezoid_method(Functions::f2, x_i - h/2, x_i + h/2);
         }
     }
@@ -134,7 +149,7 @@ public:
             return (1 / h) * (IntegralSolver::trapezoid_method(Functions::q1, x_i - h/ 2, IntegralSolver::gap) +
                               IntegralSolver::trapezoid_method(Functions::q2, IntegralSolver::gap, x_i + h / 2));
         }
-        else{
+        else if(x_i - h / 2 >= IntegralSolver::gap){
             return (1 / h) * IntegralSolver::trapezoid_method(Functions::q2, x_i - h / 2, x_i + h / 2);
         }
     }
