@@ -1,6 +1,7 @@
 #include <vector>
 #include <cmath>
 #include <string>
+#include <iostream>
 
 class Functions{
 public:
@@ -88,7 +89,10 @@ public:
     }
 
     static double tr_f(double x){
-        if (x <= 0.4 && x >= 0){
+        if (x == 0){
+            return 0.0;
+        }
+        else if (x <= 0.4 && x >= 0){
             return (c1 * std::exp(std::sqrt(2.0 / 7.0) * x) + c2 * std::exp(-std::sqrt(2.0 / 7.0) * x) + 1.0);
         }
         else if (x > 0.4 && x <= 1.0){
@@ -105,7 +109,7 @@ public:
     constexpr static double gap = 0.4;
 
     static double trapezoid_method(double (*func)(double x), const double& x_i, const double& x_i_1){
-        return (x_i_1 - x_i) * (func(x_i) + func(x_i_1)) / 2;
+        return (x_i_1 - x_i) * (func(x_i) + func(x_i_1)) / 2.0;
     }
 
 
@@ -115,58 +119,58 @@ class Run_Coeffs{
 public:
     Run_Coeffs(){};
 
-   static double a_i(const double& x_i, const double& h) {
+   static double a_i(double x_i, double h) {
         if (x_i <= IntegralSolver::gap){
-            return 1 / ((1 / h) * IntegralSolver::trapezoid_method(Functions::k1_, x_i - h, x_i));
+            return 1.0 / ((1.0 / h) * IntegralSolver::trapezoid_method(Functions::k1_, x_i - h, x_i));
         }
         else if((x_i - h < IntegralSolver::gap) && (IntegralSolver::gap < x_i)){
-            return 1 / ((1 / h) * (IntegralSolver::trapezoid_method(Functions::k1_, x_i - h, IntegralSolver::gap) +
+            return 1.0 / ((1.0 / h) * (IntegralSolver::trapezoid_method(Functions::k1_, x_i - h, IntegralSolver::gap) +
                                    IntegralSolver::trapezoid_method(Functions::k2_, IntegralSolver::gap, x_i)));
         }
         else if (x_i - h >= IntegralSolver::gap){
-            return 1 / ((1 / h) * IntegralSolver::trapezoid_method(Functions::k2_, x_i - h, x_i));
+            return 1.0 / ((1.0 / h) * IntegralSolver::trapezoid_method(Functions::k2_, x_i - h, x_i));
         }
     }
 
-    static double phi_i(const double& x_i, const double& h) {
-        if (x_i + h/2 <= IntegralSolver::gap){
-            return (1 / h) * IntegralSolver::trapezoid_method(Functions::f1, x_i - h/2, x_i + h/2);
+    static double phi_i(double x_i, double h) {
+        if (x_i + h/2.0 <= IntegralSolver::gap){
+            return (1.0 / h) * IntegralSolver::trapezoid_method(Functions::f1, x_i - h/2.0, x_i + h/2.0);
         }
-        else if((x_i - h/2 < IntegralSolver::gap) && (IntegralSolver::gap < x_i+h/2)){
-            return (1 / h) * (IntegralSolver::trapezoid_method(Functions::f1, x_i - h/2, IntegralSolver::gap) +
-                                   IntegralSolver::trapezoid_method(Functions::f2, IntegralSolver::gap, x_i + h/2));
+        else if((x_i - h/2.0 < IntegralSolver::gap) && (IntegralSolver::gap < x_i+h/2.0)){
+            return (1.0 / h) * (IntegralSolver::trapezoid_method(Functions::f1, x_i - h/2.0, IntegralSolver::gap) +
+                                   IntegralSolver::trapezoid_method(Functions::f2, IntegralSolver::gap, x_i + h/2.0));
         }
-        else if(x_i - h / 2 >= IntegralSolver::gap){
-            return (1 / h) * IntegralSolver::trapezoid_method(Functions::f2, x_i - h/2, x_i + h/2);
-        }
-    }
-
-    static double d_i(const double& x_i, const double& h) {
-        if (x_i + h/2 <= IntegralSolver::gap){
-            return (1 / h) * IntegralSolver::trapezoid_method(Functions::q1, x_i - h / 2, x_i + h/2);
-        }
-        else if((x_i - h/2 < IntegralSolver::gap) && (IntegralSolver::gap < x_i + h/2)){
-            return (1 / h) * (IntegralSolver::trapezoid_method(Functions::q1, x_i - h/ 2, IntegralSolver::gap) +
-                              IntegralSolver::trapezoid_method(Functions::q2, IntegralSolver::gap, x_i + h / 2));
-        }
-        else if(x_i - h / 2 >= IntegralSolver::gap){
-            return (1 / h) * IntegralSolver::trapezoid_method(Functions::q2, x_i - h / 2, x_i + h / 2);
+        else if(x_i - h / 2.0 >= IntegralSolver::gap){
+            return (1.0 / h) * IntegralSolver::trapezoid_method(Functions::f2, x_i - h/2.0, x_i + h/2.0);
         }
     }
 
-    static double A_i(const double& x_i, const double& h) {
+    static double d_i(double x_i, double h) {
+        if (x_i + h/2.0 <= IntegralSolver::gap){
+            return (1.0 / h) * IntegralSolver::trapezoid_method(Functions::q1, x_i - h / 2.0, x_i + h/2.0);
+        }
+        else if((x_i - h/2.0 < IntegralSolver::gap) && (IntegralSolver::gap < x_i + h/2.0)){
+            return (1.0 / h) * (IntegralSolver::trapezoid_method(Functions::q1, x_i - h/ 2.0, IntegralSolver::gap) +
+                              IntegralSolver::trapezoid_method(Functions::q2, IntegralSolver::gap, x_i + h / 2.0));
+        }
+        else if(x_i - h / 2.0 >= IntegralSolver::gap){
+            return (1.0 / h) * IntegralSolver::trapezoid_method(Functions::q2, x_i - h / 2.0, x_i + h / 2.0);
+        }
+    }
+
+    static double A_i(double x_i, double h) {
         return a_i(x_i, h) / (h * h);
     }
 
-    static double B_i(const double& x_i, const double& h){
+    static double B_i(double x_i, double h){
         return a_i(x_i + h, h) / (h * h);
     }
 
-    static double C_i(const double& x_i, const double& h){
+    static double C_i(double x_i, double h){
         return ((a_i(x_i, h) + a_i(x_i + h, h)) / (h * h)) + d_i(x_i, h);
     }
 };
 
-void run(double ae1, double mu1, double ae2, double mu2, std::vector<double>& a, std::vector<double>& b, std::vector<double>& c, std::vector<double>& phi, std::vector<double>& result);
+std::vector<double> run(int n, double ae1, double mu1, double ae2, double mu2, double x_0, double x_n);
 
-void buildLES(int n, double& x_0, double& x_n, std::vector<double>& a, std::vector<double>& b, std::vector<double>& c, std::vector<double>& phi);
+void buildLES(int n, double x_0, double x_n, std::vector<double>& a, std::vector<double>& b, std::vector<double>& c, std::vector<double>& phi);
