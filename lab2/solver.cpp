@@ -29,7 +29,7 @@ std::vector<double> run(int n, double ae1, double mu1, double ae2, double mu2, d
         beta.push_back((phi[i] + a[i]*beta[i]) / (c[i] - alpha[i] * a[i]));
     }
 
-    int n = alpha.size();
+    n = alpha.size();
     result.resize(n + 1);
 
     result[n] = (mu2 + ae2 * beta[n - 1]) / (1.0 - alpha[n - 1] * ae2);
