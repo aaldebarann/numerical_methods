@@ -14,7 +14,7 @@ void run(double ae1, double mu1, double ae2, double mu2, std::vector<double>& a,
     }
     int n = alpha.size();
 
-    result[n] = (mu2 + ae2 * beta[n]) / (1.0 - alpha[n]);
+    result[n] = (mu2 + ae2 * beta[n - 1]) / (1.0 - alpha[n - 1] * ae2);
     for (int i = n - 1; i >= 0; i--) {
         result[i] = alpha[i] * result[i + 1] + beta[i];
     }
