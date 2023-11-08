@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
 {
     this->setMinimumSize(1200, 800);
@@ -10,7 +10,7 @@ MainWindow::MainWindow(QWidget *parent)
     bottomLeftWidget = new QWidget(this);
     bottomRightWidget = new QWidget(this);
 
-    QGridLayout *gridLayout = new QGridLayout;
+    QGridLayout* gridLayout = new QGridLayout;
     gridLayout->addWidget(topLeftWidget, 0, 0);
     gridLayout->addWidget(topRightWidget, 0, 1);
     gridLayout->addWidget(bottomLeftWidget, 1, 0);
@@ -21,21 +21,21 @@ MainWindow::MainWindow(QWidget *parent)
     centralWidget->setLayout(gridLayout);
     setCentralWidget(centralWidget);
 
-    QLabel *label1 = new QLabel("Число разбиений сетки:", topLeftWidget);
+    QLabel* label1 = new QLabel("Число разбиений сетки:", topLeftWidget);
 
     grid = new QLineEdit(topLeftWidget);
     grid->setText("10");
     grid->setFixedWidth(150);
 
-    QPushButton *taskButton1 = new QPushButton("Тестовая задача", this);
-    QPushButton *taskButton2 = new QPushButton("Основная задача", this);
-    QPushButton *clearPlotButton = new QPushButton("Очистить график", this);
+    QPushButton* taskButton1 = new QPushButton("Тестовая задача", this);
+    QPushButton* taskButton2 = new QPushButton("Основная задача", this);
+    QPushButton* clearPlotButton = new QPushButton("Очистить график", this);
 
     summary = new QTextEdit();
     summary->setPlainText("Справка");
     summary->setReadOnly(true);
 
-    QGridLayout *topLeftLayout = new QGridLayout;
+    QGridLayout* topLeftLayout = new QGridLayout;
 
     topLeftLayout->addWidget(taskButton1, 0, 0);
     topLeftLayout->addWidget(taskButton2, 0, 1);
@@ -46,11 +46,11 @@ MainWindow::MainWindow(QWidget *parent)
     topLeftWidget->setLayout(topLeftLayout);
 
     tabWidget = new QTabWidget(bottomLeftWidget);
-    QVBoxLayout *bottomLeftLayout = new QVBoxLayout(bottomLeftWidget);
+    QVBoxLayout* bottomLeftLayout = new QVBoxLayout(bottomLeftWidget);
     bottomLeftLayout->addWidget(tabWidget);
     bottomLeftWidget->setLayout(bottomLeftLayout);
 
-    QVBoxLayout *topRightLayout = new QVBoxLayout(topRightWidget);
+    QVBoxLayout* topRightLayout = new QVBoxLayout(topRightWidget);
     pchart = new QChart();
     pchart->createDefaultAxes();
     pchart->setAnimationOptions(QChart::AllAnimations);
@@ -102,7 +102,7 @@ MainWindow::MainWindow(QWidget *parent)
     chartView->setRubberBand(QChartView::RectangleRubberBand);
     chartView->setDragMode(QGraphicsView::ScrollHandDrag);
     chartView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
-    QVBoxLayout *bottomRightLayout = new QVBoxLayout(bottomRightWidget);
+    QVBoxLayout* bottomRightLayout = new QVBoxLayout(bottomRightWidget);
     bottomRightLayout->addWidget(chartView);
     bottomRightWidget->setLayout(bottomRightLayout);
 
@@ -117,13 +117,13 @@ MainWindow::~MainWindow()
 
 
 
-void MainWindow::onTask1Clicked(){
+void MainWindow::onTask1Clicked() {
     n = grid->text().toInt();
-    QLineSeries *series = new QLineSeries();
-    QLineSeries *seriesve = new QLineSeries();
-    QLineSeries *pseries = new QLineSeries();
+    QLineSeries* series = new QLineSeries();
+    QLineSeries* seriesve = new QLineSeries();
+    QLineSeries* pseries = new QLineSeries();
     tableWidget = new QTableWidget(tabWidget);
-    QHeaderView *header = tableWidget->horizontalHeader();
+    QHeaderView* header = tableWidget->horizontalHeader();
     header->setSectionResizeMode(QHeaderView::ResizeToContents);
     tableWidget->setSortingEnabled(false);
     tableWidget->setColumnCount(4);
@@ -142,15 +142,29 @@ void MainWindow::onTask1Clicked(){
     double x_n = 1;
     double eps = 10e-6;
     std::vector<double> epss;
+    std::vector<double> y(n);
+    std::vector<double> y2(n * 2);
+    std::vector<double> a;
+    std::vector<double> b;
+    std::vector<double> c;
+    std::vector<double> phi;
 
-    auto y = run(n, ae1, mu1, ae2, mu2, x_0, x_n);
-    auto y2 = run(2*n, ae1, mu1, ae2, mu2, x_0, x_n);
+    buildLES(n, x_0, x_n, a, b, c, phi);
+    run(ae1, mu1, ae2, mu2, x_0, x_n, a, b, c, phi, y);
+
+    a.clear();
+    b.clear();
+    c.clear();
+    phi.clear();
+
+    buildLES(n * 2, x_0, x_n, a, b, c, phi);
+    run(ae1, mu1, ae2, mu2, x_0, x_n, a, b, c, phi, y2);
 
 
     // Сюда код решения задачи, в котором нужно в series, seriesve добавить точки решения и обновить epsilon1, xerr
     // Так же не забыть про погрешность, но её можно вывести из точек в series, seriesve
     // Шаблон для добавления точек и строк в таблицу:
-    for (int i = 0; i < y.size(); i++){
+    for (int i = 0; i < y.size(); i++) {
         double x_i = x_0 + i * (1.0 / (double)n);
         double u = Functions::tr_f(x_i);
         series->append(x_i, y[i]);
@@ -180,24 +194,24 @@ void MainWindow::onTask1Clicked(){
     tabCounter++;
 
     QString message = QString("Справка:  \n"
-                              "Для решения задачи использована равномерная сетка с числом разбиений n = %1 \n"
-                              "Задача должна быть решена с погрешностью не более ε = 10e-6 \n"
-                              "Задача решена с погрешностью ε1 = %2 \n"
-                              "Максимальное отклонение аналитического и численного решений наблюдается в точке x = %3 \n")
-                      .arg(n)
-                      .arg(epsilon1)
-                      .arg(xerr);
+        "Для решения задачи использована равномерная сетка с числом разбиений n = %1 \n"
+        "Задача должна быть решена с погрешностью не более ε = 10e-6 \n"
+        "Задача решена с погрешностью ε1 = %2 \n"
+        "Максимальное отклонение аналитического и численного решений наблюдается в точке x = %3 \n")
+        .arg(n)
+        .arg(epsilon1)
+        .arg(xerr);
     summary->setPlainText(message);
     summary->setReadOnly(true);
 }
 
-void  MainWindow::onTask2Clicked(){
+void  MainWindow::onTask2Clicked() {
     n = grid->text().toInt();
-    QLineSeries *series = new QLineSeries();
-    QLineSeries *seriesve = new QLineSeries();
-    QLineSeries *pseries = new QLineSeries();
+    QLineSeries* series = new QLineSeries();
+    QLineSeries* seriesve = new QLineSeries();
+    QLineSeries* pseries = new QLineSeries();
     tableWidget = new QTableWidget(tabWidget);
-    QHeaderView *header = tableWidget->horizontalHeader();
+    QHeaderView* header = tableWidget->horizontalHeader();
     header->setSectionResizeMode(QHeaderView::ResizeToContents);
     tableWidget->setSortingEnabled(false);
     tableWidget->setColumnCount(4);
@@ -216,13 +230,27 @@ void  MainWindow::onTask2Clicked(){
     double x_n = 1;
     double eps = 10e-6;
     std::vector<double> epss;
+    std::vector<double> y(n);
+    std::vector<double> y2(n * 2);
+    std::vector<double> a;
+    std::vector<double> b;
+    std::vector<double> c;
+    std::vector<double> phi;
 
-    auto y = run(n, ae1, mu1, ae2, mu2, x_0, x_n);
-    auto y2 = run(2*n, ae1, mu1, ae2, mu2, x_0, x_n);
+    buildLES(n, x_0, x_n, a, b, c, phi);
+    run(ae1, mu1, ae2, mu2, x_0, x_n, a, b, c, phi, y);
+
+    a.clear();
+    b.clear();
+    c.clear();
+    phi.clear();
+    
+    buildLES(n * 2, x_0, x_n, a, b, c, phi);
+    run(ae1, mu1, ae2, mu2, x_0, x_n, a, b, c, phi, y2);
 
     double h = 1.0 / (double)n;
     std::cout << h << std::endl;
-    for (int i = 0; i < y.size(); i++){
+    for (int i = 0; i < y.size(); i++) {
         double x_i = x_0 + i * h;
         series->append(x_i, y[i]);
         pseries->append(x_i, std::abs(y[i] - y2[2 * i]));
@@ -233,8 +261,8 @@ void  MainWindow::onTask2Clicked(){
         tableWidget->setItem(tableWidget->rowCount() - 1, 2, new QTableWidgetItem(QString::number(y2[2 * i])));
         tableWidget->setItem(tableWidget->rowCount() - 1, 3, new QTableWidgetItem(QString::number(std::abs(y[i] - y2[2 * i]))));
     }
-    for (int i = 0; i < y2.size(); i++){
-        double x_i = x_0 + i * h/2;
+    for (int i = 0; i < y2.size(); i++) {
+        double x_i = x_0 + i * h / 2;
         seriesve->append(x_i, y2[i]);
     }
     auto max = std::max_element(epss.begin(), epss.end());
@@ -257,18 +285,18 @@ void  MainWindow::onTask2Clicked(){
     tabCounter++;
 
     QString message = QString("Справка:  \n"
-                              "Для решения задачи использована равномерная сетка с числом разбиений n = %1 \n"
-                              "Задача должна быть решена с заданной точностью ε = 10e-6 \n"
-                              "Задача решена с точностью ε2 = %2 \n"
-                              "Максимальная разность численных решений в общих узлах сетки наблюдается в точке x = %3 \n")
-                          .arg(n)
-                          .arg(epsilon1)
-                          .arg(xerr);
+        "Для решения задачи использована равномерная сетка с числом разбиений n = %1 \n"
+        "Задача должна быть решена с заданной точностью ε = 10e-6 \n"
+        "Задача решена с точностью ε2 = %2 \n"
+        "Максимальная разность численных решений в общих узлах сетки наблюдается в точке x = %3 \n")
+        .arg(n)
+        .arg(epsilon1)
+        .arg(xerr);
     summary->setPlainText(message);
     summary->setReadOnly(true);
 }
 
-void  MainWindow::onClearPlotButtonClicked(){
+void  MainWindow::onClearPlotButtonClicked() {
     chart->removeAllSeries();
     chart->createDefaultAxes();
     pchart->removeAllSeries();
