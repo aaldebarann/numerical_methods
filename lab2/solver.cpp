@@ -24,7 +24,7 @@ void run(double ae1, double mu1, double ae2, double mu2, double x_0, double x_n,
 }
 
 void buildLES(int n, double x_0, double x_n, std::vector<double>& a, std::vector<double>& b, std::vector<double>& c, std::vector<double>& phi) {
-    double h = (x_n - x_0) / (double)n;
+    double h = (x_n - x_0) / (double)(n - 1);
     for (int i = 1; i < n - 1; i++) {
         double x_i = x_0 + i * h;
         a.push_back(Run_Coeffs::A_i(x_i, h));

@@ -22,7 +22,6 @@
 #include <cmath>
 #include "solver.h"
 
-using namespace QtCharts;
 
 class MainWindow : public QMainWindow
 {

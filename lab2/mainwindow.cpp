@@ -15,8 +15,8 @@ MainWindow::MainWindow(QWidget* parent)
     gridLayout->addWidget(topRightWidget, 0, 1);
     gridLayout->addWidget(bottomLeftWidget, 1, 0);
     gridLayout->addWidget(bottomRightWidget, 1, 1);
-    topLeftWidget->setFixedSize(300, 270);
-    bottomLeftWidget->setFixedSize(300, 530);
+    topLeftWidget->setFixedSize(310, 270);
+    bottomLeftWidget->setFixedSize(310, 530);
     centralWidget = new QWidget(this);
     centralWidget->setLayout(gridLayout);
     setCentralWidget(centralWidget);
@@ -143,7 +143,6 @@ void MainWindow::onTask1Clicked() {
     double eps = 10e-6;
     std::vector<double> epss;
     std::vector<double> y(n);
-    std::vector<double> y2(n * 2);
     std::vector<double> a;
     std::vector<double> b;
     std::vector<double> c;
@@ -156,21 +155,22 @@ void MainWindow::onTask1Clicked() {
     b.clear();
     c.clear();
     phi.clear();
-
-    buildLES(n * 2, x_0, x_n, a, b, c, phi);
-    run(ae1, mu1, ae2, mu2, x_0, x_n, a, b, c, phi, y2);
-
-
-    // Сюда код решения задачи, в котором нужно в series, seriesve добавить точки решения и обновить epsilon1, xerr
-    // Так же не забыть про погрешность, но её можно вывести из точек в series, seriesve
-    // Шаблон для добавления точек и строк в таблицу:
+    double h = (1.0 / (double)(n - 1));
+    for (int i = 0; i < n; i++) {
+        double x_i = x_0 + i * h;
+        double u = Functions::tr_f(x_i);
+        epss.push_back(std::abs(y[i] - u));
+    }
     for (int i = 0; i < y.size(); i++) {
-        double x_i = x_0 + i * (1.0 / (double)n);
+        double x_i = x_0 + i * h;
         double u = Functions::tr_f(x_i);
         series->append(x_i, y[i]);
         seriesve->append(x_i, u);
         pseries->append(x_i, std::abs(y[i] - u));
-        epss.push_back(std::abs(y[i] - u));
+    }
+    for(int i = 1; i < y.size(); i++){
+        double x_i = x_0 + i * (1.0 / (double)(n - 1));
+        double u = Functions::tr_f(x_i);
         tableWidget->insertRow(tableWidget->rowCount());
         tableWidget->setItem(tableWidget->rowCount() - 1, 0, new QTableWidgetItem(QString::number(x_i)));
         tableWidget->setItem(tableWidget->rowCount() - 1, 1, new QTableWidgetItem(QString::number(y[i])));
@@ -231,7 +231,7 @@ void  MainWindow::onTask2Clicked() {
     double eps = 10e-6;
     std::vector<double> epss;
     std::vector<double> y(n);
-    std::vector<double> y2(n * 2);
+    std::vector<double> y2(n * 2 - 1);
     std::vector<double> a;
     std::vector<double> b;
     std::vector<double> c;
@@ -245,32 +245,30 @@ void  MainWindow::onTask2Clicked() {
     c.clear();
     phi.clear();
     
-    buildLES(n * 2, x_0, x_n, a, b, c, phi);
+    buildLES(n * 2 - 1, x_0, x_n, a, b, c, phi);
     run(ae1, mu1, ae2, mu2, x_0, x_n, a, b, c, phi, y2);
 
-    double h = 1.0 / (double)n;
-    std::cout << h << std::endl;
+    double h1 = 1.0 / (double)(n - 1);
     for (int i = 0; i < y.size(); i++) {
-        double x_i = x_0 + i * h;
-        series->append(x_i, y[i]);
-        pseries->append(x_i, std::abs(y[i] - y2[2 * i]));
         epss.push_back(std::abs(y[i] - y2[2 * i]));
+    }
+    for (int i = 0; i < y.size(); i++) {
+        double x_i = x_0 + i * h1;
+        series->append(x_i, y[i]);
+        seriesve->append(x_i, y2[2 * i]);
+        pseries->append(x_i, std::abs(y[i] - y2[2 * i]));
+    }
+    for(int i = 1; i < y.size(); i++){
+        double x_i = x_0 + i * h1;
         tableWidget->insertRow(tableWidget->rowCount());
         tableWidget->setItem(tableWidget->rowCount() - 1, 0, new QTableWidgetItem(QString::number(x_i)));
         tableWidget->setItem(tableWidget->rowCount() - 1, 1, new QTableWidgetItem(QString::number(y[i])));
         tableWidget->setItem(tableWidget->rowCount() - 1, 2, new QTableWidgetItem(QString::number(y2[2 * i])));
         tableWidget->setItem(tableWidget->rowCount() - 1, 3, new QTableWidgetItem(QString::number(std::abs(y[i] - y2[2 * i]))));
     }
-    for (int i = 0; i < y2.size(); i++) {
-        double x_i = x_0 + i * h / 2;
-        seriesve->append(x_i, y2[i]);
-    }
     auto max = std::max_element(epss.begin(), epss.end());
     epsilon1 = *max;
-    xerr = x_0 + std::distance(epss.begin(), max) * (1.0 / (double)n);
-    // Сюда код решения задачи, в котором нужно в series, seriesve добавить точки решения и обновить epsilon1, xerr
-    // Так же не забыть про погрешность, но её можно вывести из точек в series, seriesve
-
+    xerr = x_0 + std::distance(epss.begin(), max) * h1;
     pseries->setName("Погрешность " + QString::number(tabCounter));
     pchart->addSeries(pseries);
     pchart->createDefaultAxes();
@@ -303,5 +301,4 @@ void  MainWindow::onClearPlotButtonClicked() {
     pchart->createDefaultAxes();
     summary->setPlainText("Справка");
     tabWidget->clear();
-    tabCounter = 1;
 }
