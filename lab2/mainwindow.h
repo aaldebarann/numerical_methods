@@ -47,8 +47,8 @@ public:
     QValueAxis *paxisY;
 
     int n = 10;
-    double epsilon1 = 0;
-    double xerr = 0;
+    long double epsilon1 = 0;
+    long double xerr = 0;
     int tabCounter = 1;
 
     void onTask1Clicked();

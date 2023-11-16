@@ -1,10 +1,10 @@
 #include"solver.h"
 
 //a, b, c, phi: n - 2; result: n;
-void run(double ae1, double mu1, double ae2, double mu2, double x_0, double x_n, std::vector<double>& a, std::vector<double>& b, std::vector<double>& c, std::vector<double>& phi, std::vector<double>& result) {
+void run(long double ae1, long double mu1, long double ae2, long double mu2, long double x_0, long double x_n, std::vector<long double>& a, std::vector<long double>& b, std::vector<long double>& c, std::vector<long double>& phi, std::vector<long double>& result) {
 
-    std::vector<double> alpha;
-    std::vector<double> beta;
+    std::vector<long double> alpha;
+    std::vector<long double> beta;
 
     alpha.push_back(ae1);
     beta.push_back(mu1);
@@ -23,10 +23,10 @@ void run(double ae1, double mu1, double ae2, double mu2, double x_0, double x_n,
     }
 }
 
-void buildLES(int n, double x_0, double x_n, std::vector<double>& a, std::vector<double>& b, std::vector<double>& c, std::vector<double>& phi) {
-    double h = (x_n - x_0) / (double)(n - 1);
+void buildLES(int n, long double x_0, long double x_n, std::vector<long double>& a, std::vector<long double>& b, std::vector<long double>& c, std::vector<long double>& phi) {
+    long double h = (x_n - x_0) / (long double)(n - 1);
     for (int i = 1; i < n - 1; i++) {
-        double x_i = x_0 + i * h;
+        long double x_i = x_0 + i * h;
         a.push_back(Run_Coeffs::A_i(x_i, h));
         b.push_back(Run_Coeffs::B_i(x_i, h));
         c.push_back(Run_Coeffs::C_i(x_i, h));

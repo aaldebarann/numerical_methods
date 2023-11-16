@@ -134,19 +134,18 @@ void MainWindow::onTask1Clicked() {
 
     Functions::set_task("test");
 
-    double ae1 = 0;
-    double mu1 = 0;
-    double ae2 = 0;
-    double mu2 = 1;
-    double x_0 = 0;
-    double x_n = 1;
-    double eps = 10e-6;
-    std::vector<double> epss;
-    std::vector<double> y(n);
-    std::vector<double> a;
-    std::vector<double> b;
-    std::vector<double> c;
-    std::vector<double> phi;
+    long double ae1 = 0;
+    long double mu1 = 0;
+    long double ae2 = 0;
+    long double mu2 = 1;
+    long double x_0 = 0;
+    long double x_n = 1;
+    std::vector<long double> epss;
+    std::vector<long double> y(n);
+    std::vector<long double> a;
+    std::vector<long double> b;
+    std::vector<long double> c;
+    std::vector<long double> phi;
 
     buildLES(n, x_0, x_n, a, b, c, phi);
     run(ae1, mu1, ae2, mu2, x_0, x_n, a, b, c, phi, y);
@@ -155,31 +154,52 @@ void MainWindow::onTask1Clicked() {
     b.clear();
     c.clear();
     phi.clear();
-    double h = (1.0 / (double)(n - 1));
+    long double h = (1.0 / (long double)(n - 1));
     for (int i = 0; i < n; i++) {
-        double x_i = x_0 + i * h;
-        double u = Functions::tr_f(x_i);
+        long double x_i = x_0 + i * h;
+        long double u = Functions::tr_f(x_i);
         epss.push_back(std::abs(y[i] - u));
     }
-    for (int i = 0; i < y.size(); i++) {
-        double x_i = x_0 + i * h;
-        double u = Functions::tr_f(x_i);
-        series->append(x_i, y[i]);
-        seriesve->append(x_i, u);
-        pseries->append(x_i, std::abs(y[i] - u));
+    if (n <= 10001){
+        for (int i = 0; i < y.size(); i++) {
+            long double x_i = x_0 + i * h;
+            long double u = Functions::tr_f(x_i);
+            series->append(x_i, y[i]);
+            seriesve->append(x_i, u);
+            pseries->append(x_i, std::abs(y[i] - u));
+        }
+        for(int i = 1; i < y.size(); i++){
+            long double x_i = x_0 + i * (1.0 / (long double)(n - 1));
+            long double u = Functions::tr_f(x_i);
+            tableWidget->insertRow(tableWidget->rowCount());
+            tableWidget->setItem(tableWidget->rowCount() - 1, 0, new QTableWidgetItem(QString::number(static_cast<double>(x_i))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 1, new QTableWidgetItem(QString::number(static_cast<double>(y[i]))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 2, new QTableWidgetItem(QString::number(static_cast<double>(u))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 3, new QTableWidgetItem(QString::number(static_cast<double>(std::abs(y[i] - u)))));
+        }
+    } else {
+        int skp = n / 10000;
+        for (int i = 0; i < y.size(); i += skp) {
+            long double x_i = x_0 + i * h;
+            long double u = Functions::tr_f(x_i);
+            series->append(x_i, y[i]);
+            seriesve->append(x_i, u);
+            pseries->append(x_i, std::abs(y[i] - u));
+        }
+        for(int i = 1; i < y.size(); i += skp){
+            long double x_i = x_0 + i * (1.0 / (long double)(n - 1));
+            long double u = Functions::tr_f(x_i);
+            tableWidget->insertRow(tableWidget->rowCount());
+            tableWidget->setItem(tableWidget->rowCount() - 1, 0, new QTableWidgetItem(QString::number(static_cast<double>(x_i))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 1, new QTableWidgetItem(QString::number(static_cast<double>(y[i]))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 2, new QTableWidgetItem(QString::number(static_cast<double>(u))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 3, new QTableWidgetItem(QString::number(static_cast<double>(std::abs(y[i] - u)))));
+        }
     }
-    for(int i = 1; i < y.size(); i++){
-        double x_i = x_0 + i * (1.0 / (double)(n - 1));
-        double u = Functions::tr_f(x_i);
-        tableWidget->insertRow(tableWidget->rowCount());
-        tableWidget->setItem(tableWidget->rowCount() - 1, 0, new QTableWidgetItem(QString::number(x_i)));
-        tableWidget->setItem(tableWidget->rowCount() - 1, 1, new QTableWidgetItem(QString::number(y[i])));
-        tableWidget->setItem(tableWidget->rowCount() - 1, 2, new QTableWidgetItem(QString::number(u)));
-        tableWidget->setItem(tableWidget->rowCount() - 1, 3, new QTableWidgetItem(QString::number(std::abs(y[i] - u))));
-    }
+
     auto max = std::max_element(epss.begin(), epss.end());
     epsilon1 = *max;
-    xerr = x_0 + std::distance(epss.begin(), max) * (1.0 / (double)n);
+    xerr = x_0 + std::distance(epss.begin(), max) * (1.0 / (long double)n);
     pseries->setName("Погрешность " + QString::number(tabCounter));
     pchart->addSeries(pseries);
     pchart->createDefaultAxes();
@@ -199,8 +219,8 @@ void MainWindow::onTask1Clicked() {
         "Задача решена с погрешностью ε1 = %2 \n"
         "Максимальное отклонение аналитического и численного решений наблюдается в точке x = %3 \n")
         .arg(n)
-        .arg(epsilon1)
-        .arg(xerr);
+        .arg(static_cast<double>(epsilon1))
+        .arg(static_cast<double>(xerr));
     summary->setPlainText(message);
     summary->setReadOnly(true);
 }
@@ -222,20 +242,19 @@ void  MainWindow::onTask2Clicked() {
 
     Functions::set_task("main");
 
-    double ae1 = 0;
-    double mu1 = 0;
-    double ae2 = 0;
-    double mu2 = 1;
-    double x_0 = 0;
-    double x_n = 1;
-    double eps = 10e-6;
-    std::vector<double> epss;
-    std::vector<double> y(n);
-    std::vector<double> y2(n * 2 - 1);
-    std::vector<double> a;
-    std::vector<double> b;
-    std::vector<double> c;
-    std::vector<double> phi;
+    long double ae1 = 0;
+    long double mu1 = 0;
+    long double ae2 = 0;
+    long double mu2 = 1;
+    long double x_0 = 0;
+    long double x_n = 1;
+    std::vector<long double> epss;
+    std::vector<long double> y(n);
+    std::vector<long double> y2(n * 2 - 1);
+    std::vector<long double> a;
+    std::vector<long double> b;
+    std::vector<long double> c;
+    std::vector<long double> phi;
 
     buildLES(n, x_0, x_n, a, b, c, phi);
     run(ae1, mu1, ae2, mu2, x_0, x_n, a, b, c, phi, y);
@@ -244,27 +263,27 @@ void  MainWindow::onTask2Clicked() {
     b.clear();
     c.clear();
     phi.clear();
-    
+
     buildLES(n * 2 - 1, x_0, x_n, a, b, c, phi);
     run(ae1, mu1, ae2, mu2, x_0, x_n, a, b, c, phi, y2);
 
-    double h1 = 1.0 / (double)(n - 1);
+    long double h1 = 1.0 / (long double)(n - 1);
     for (int i = 0; i < y.size(); i++) {
         epss.push_back(std::abs(y[i] - y2[2 * i]));
     }
     for (int i = 0; i < y.size(); i++) {
-        double x_i = x_0 + i * h1;
+        long double x_i = x_0 + i * h1;
         series->append(x_i, y[i]);
         seriesve->append(x_i, y2[2 * i]);
         pseries->append(x_i, std::abs(y[i] - y2[2 * i]));
     }
     for(int i = 1; i < y.size(); i++){
-        double x_i = x_0 + i * h1;
+        long double x_i = x_0 + i * h1;
         tableWidget->insertRow(tableWidget->rowCount());
-        tableWidget->setItem(tableWidget->rowCount() - 1, 0, new QTableWidgetItem(QString::number(x_i)));
-        tableWidget->setItem(tableWidget->rowCount() - 1, 1, new QTableWidgetItem(QString::number(y[i])));
-        tableWidget->setItem(tableWidget->rowCount() - 1, 2, new QTableWidgetItem(QString::number(y2[2 * i])));
-        tableWidget->setItem(tableWidget->rowCount() - 1, 3, new QTableWidgetItem(QString::number(std::abs(y[i] - y2[2 * i]))));
+        tableWidget->setItem(tableWidget->rowCount() - 1, 0, new  QTableWidgetItem(QString::number(static_cast<double>(x_i))));
+        tableWidget->setItem(tableWidget->rowCount() - 1, 1, new QTableWidgetItem(QString::number(static_cast<double>(y[i]))));
+        tableWidget->setItem(tableWidget->rowCount() - 1, 2, new QTableWidgetItem(QString::number(static_cast<double>(y2[2 * i]))));
+        tableWidget->setItem(tableWidget->rowCount() - 1, 3, new QTableWidgetItem(QString::number(static_cast<double>(std::abs(y[i] - y2[2 * i])))));
     }
     auto max = std::max_element(epss.begin(), epss.end());
     epsilon1 = *max;
@@ -288,8 +307,8 @@ void  MainWindow::onTask2Clicked() {
         "Задача решена с точностью ε2 = %2 \n"
         "Максимальная разность численных решений в общих узлах сетки наблюдается в точке x = %3 \n")
         .arg(n)
-        .arg(epsilon1)
-        .arg(xerr);
+        .arg(static_cast<double>(epsilon1))
+        .arg(static_cast<double>(xerr));
     summary->setPlainText(message);
     summary->setReadOnly(true);
 }
