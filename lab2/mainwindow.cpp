@@ -3,7 +3,7 @@
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
 {
-    this->setMinimumSize(1200, 800);
+    this->setMinimumSize(1300, 800);
 
     topLeftWidget = new QWidget(this);
     topRightWidget = new QWidget(this);
@@ -15,8 +15,8 @@ MainWindow::MainWindow(QWidget* parent)
     gridLayout->addWidget(topRightWidget, 0, 1);
     gridLayout->addWidget(bottomLeftWidget, 1, 0);
     gridLayout->addWidget(bottomRightWidget, 1, 1);
-    topLeftWidget->setFixedSize(310, 270);
-    bottomLeftWidget->setFixedSize(310, 530);
+    topLeftWidget->setFixedSize(355, 270);
+    bottomLeftWidget->setFixedSize(355, 530);
     centralWidget = new QWidget(this);
     centralWidget->setLayout(gridLayout);
     setCentralWidget(centralWidget);
@@ -116,9 +116,9 @@ MainWindow::~MainWindow()
 }
 
 
-
 void MainWindow::onTask1Clicked() {
     n = grid->text().toInt();
+    n++;
     QLineSeries* series = new QLineSeries();
     QLineSeries* seriesve = new QLineSeries();
     QLineSeries* pseries = new QLineSeries();
@@ -134,19 +134,19 @@ void MainWindow::onTask1Clicked() {
 
     Functions::set_task("test");
 
-    double ae1 = 0;
-    double mu1 = 0;
-    double ae2 = 0;
-    double mu2 = 1;
-    double x_0 = 0;
-    double x_n = 1;
-    double eps = 10e-6;
-    std::vector<double> epss;
-    std::vector<double> y(n);
-    std::vector<double> a;
-    std::vector<double> b;
-    std::vector<double> c;
-    std::vector<double> phi;
+    epsilon1 = 0;
+    xerr = 0;
+    high_precision_type ae1 = 0;
+    high_precision_type mu1 = 0;
+    high_precision_type ae2 = 0;
+    high_precision_type mu2 = 1;
+    high_precision_type x_0 = 0;
+    high_precision_type x_n = 1;
+    std::vector<high_precision_type> y(n);
+    std::vector<high_precision_type> a;
+    std::vector<high_precision_type> b;
+    std::vector<high_precision_type> c;
+    std::vector<high_precision_type> phi;
 
     buildLES(n, x_0, x_n, a, b, c, phi);
     run(ae1, mu1, ae2, mu2, x_0, x_n, a, b, c, phi, y);
@@ -155,58 +155,88 @@ void MainWindow::onTask1Clicked() {
     b.clear();
     c.clear();
     phi.clear();
-    double h = (1.0 / (double)(n - 1));
+
+    high_precision_type h = (high_precision_type("1.0") / (high_precision_type)(n - 1));
     for (int i = 0; i < n; i++) {
-        double x_i = x_0 + i * h;
-        double u = Functions::tr_f(x_i);
-        epss.push_back(std::abs(y[i] - u));
+        high_precision_type x_i = x_0 + i * h;
+        high_precision_type u = Functions::tr_f(x_i);
+        if (epsilon1 < mp::abs(y[i] - u)) {
+            epsilon1 = mp::abs(y[i] - u);
+            xerr = x_i;
+        }
     }
-    for (int i = 0; i < y.size(); i++) {
-        double x_i = x_0 + i * h;
-        double u = Functions::tr_f(x_i);
-        series->append(x_i, y[i]);
-        seriesve->append(x_i, u);
-        pseries->append(x_i, std::abs(y[i] - u));
+    std::cout << "eps: " << epsilon1.convert_to<std::string>() << std::endl;
+    std::cout << "x: " << xerr.convert_to<std::string>() << "n: " << n - 1 << std::endl;
+    if (n <= 10001){
+        for (int i = 0; i < y.size(); i++) {
+            high_precision_type x_i = x_0 + i * h;
+            high_precision_type u = Functions::tr_f(x_i);
+            series->append(static_cast<double>(x_i), static_cast<double>(y[i]));
+            seriesve->append(static_cast<double>(x_i), static_cast<double>(u));
+            pseries->append(static_cast<double>(x_i), static_cast<double>(mp::abs(y[i] - u)));
+        }
+        for(int i = 0; i < y.size(); i++){
+            high_precision_type x_i = x_0 + i * (1.0 / (high_precision_type)(n - 1));
+            high_precision_type u = Functions::tr_f(x_i);
+            tableWidget->insertRow(tableWidget->rowCount());
+            tableWidget->setItem(tableWidget->rowCount() - 1, 0, new QTableWidgetItem(QString::number(static_cast<double>(x_i))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 1, new QTableWidgetItem(QString::number(static_cast<double>(y[i]))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 2, new QTableWidgetItem(QString::number(static_cast<double>(u))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 3, new QTableWidgetItem(QString::number(static_cast<double>(mp::abs(y[i] - u)))));
+        }
+    } else {
+        int skp = n / 1000;
+        for (int i = 0; i < y.size(); i += skp) {
+            high_precision_type x_i = x_0 + i * h;
+            high_precision_type u = Functions::tr_f(x_i);
+            series->append(static_cast<double>(x_i), static_cast<double>(y[i]));
+            seriesve->append(static_cast<double>(x_i), static_cast<double>(u));
+            pseries->append(static_cast<double>(x_i), static_cast<double>(mp::abs(y[i] - u)));
+            tableWidget->insertRow(tableWidget->rowCount());
+            tableWidget->setItem(tableWidget->rowCount() - 1, 0, new QTableWidgetItem(QString::number(static_cast<double>(x_i))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 1, new QTableWidgetItem(QString::number(static_cast<double>(y[i]))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 2, new QTableWidgetItem(QString::number(static_cast<double>(u))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 3, new QTableWidgetItem(QString::number(static_cast<double>(mp::abs(y[i] - u)))));
+        }
+        if(y.size() % skp != 1){
+            high_precision_type u = Functions::tr_f(x_n);
+            series->append(static_cast<double>(x_n), static_cast<double>(y[y.size() - 1]));
+            seriesve->append(static_cast<double>(x_n), static_cast<double>(u));
+            pseries->append(static_cast<double>(x_n), static_cast<double>(mp::abs(y[y.size() - 1] - u)));
+            tableWidget->insertRow(tableWidget->rowCount());
+            tableWidget->setItem(tableWidget->rowCount() - 1, 0, new QTableWidgetItem(QString::number(static_cast<double>(x_n))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 1, new QTableWidgetItem(QString::number(static_cast<double>(y[y.size() - 1]))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 2, new QTableWidgetItem(QString::number(static_cast<double>(u))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 3, new QTableWidgetItem(QString::number(static_cast<double>(mp::abs(y[y.size()- 1] - u)))));
+        }
     }
-    for(int i = 1; i < y.size(); i++){
-        double x_i = x_0 + i * (1.0 / (double)(n - 1));
-        double u = Functions::tr_f(x_i);
-        tableWidget->insertRow(tableWidget->rowCount());
-        tableWidget->setItem(tableWidget->rowCount() - 1, 0, new QTableWidgetItem(QString::number(x_i)));
-        tableWidget->setItem(tableWidget->rowCount() - 1, 1, new QTableWidgetItem(QString::number(y[i])));
-        tableWidget->setItem(tableWidget->rowCount() - 1, 2, new QTableWidgetItem(QString::number(u)));
-        tableWidget->setItem(tableWidget->rowCount() - 1, 3, new QTableWidgetItem(QString::number(std::abs(y[i] - u))));
-    }
-    auto max = std::max_element(epss.begin(), epss.end());
-    epsilon1 = *max;
-    xerr = x_0 + std::distance(epss.begin(), max) * (1.0 / (double)n);
-    pseries->setName("Погрешность " + QString::number(tabCounter));
+    pseries->setName("Погр., n = " + QString::number(n - 1));
     pchart->addSeries(pseries);
     pchart->createDefaultAxes();
     pchart->zoomReset();
-    series->setName("Тестовая" + QString::number(tabCounter));
-    seriesve->setName("Тестовая истинная" + QString::number(tabCounter));
+    series->setName("Тест., n = " + QString::number(n - 1));
+    seriesve->setName("Истинная, n = " + QString::number(n - 1));
     chart->addSeries(seriesve);
     chart->addSeries(series);
     chart->createDefaultAxes();
     chart->zoomReset();
-    tabWidget->addTab(tableWidget, "Тестовая задача " + QString::number(tabCounter));
-    tabCounter++;
+    tabWidget->addTab(tableWidget, "Тест., n = " + QString::number(n - 1));
 
     QString message = QString("Справка:  \n"
         "Для решения задачи использована равномерная сетка с числом разбиений n = %1 \n"
         "Задача должна быть решена с погрешностью не более ε = 10e-6 \n"
         "Задача решена с погрешностью ε1 = %2 \n"
-        "Максимальное отклонение аналитического и численного решений наблюдается в точке x = %3 \n")
-        .arg(n)
-        .arg(epsilon1)
-        .arg(xerr);
+        "Максимальное отклонение аналитического и численного решений наблюдается в точке x = %3 ")
+        .arg(n - 1)
+        .arg(static_cast<double>(epsilon1))
+        .arg(static_cast<double>(xerr));
     summary->setPlainText(message);
     summary->setReadOnly(true);
 }
 
 void  MainWindow::onTask2Clicked() {
     n = grid->text().toInt();
+    n++;
     QLineSeries* series = new QLineSeries();
     QLineSeries* seriesve = new QLineSeries();
     QLineSeries* pseries = new QLineSeries();
@@ -222,20 +252,21 @@ void  MainWindow::onTask2Clicked() {
 
     Functions::set_task("main");
 
-    double ae1 = 0;
-    double mu1 = 0;
-    double ae2 = 0;
-    double mu2 = 1;
-    double x_0 = 0;
-    double x_n = 1;
-    double eps = 10e-6;
-    std::vector<double> epss;
-    std::vector<double> y(n);
-    std::vector<double> y2(n * 2 - 1);
-    std::vector<double> a;
-    std::vector<double> b;
-    std::vector<double> c;
-    std::vector<double> phi;
+    epsilon1 = 0;
+    xerr = 0;
+    high_precision_type ae1 = 0;
+    high_precision_type mu1 = 0;
+    high_precision_type ae2 = 0;
+    high_precision_type mu2 = 1;
+    high_precision_type x_0 = 0;
+    high_precision_type x_n = 1;
+    std::vector<high_precision_type> epss;
+    std::vector<high_precision_type> y(n);
+    std::vector<high_precision_type> y2(n * 2 - 1);
+    std::vector<high_precision_type> a;
+    std::vector<high_precision_type> b;
+    std::vector<high_precision_type> c;
+    std::vector<high_precision_type> phi;
 
     buildLES(n, x_0, x_n, a, b, c, phi);
     run(ae1, mu1, ae2, mu2, x_0, x_n, a, b, c, phi, y);
@@ -244,52 +275,77 @@ void  MainWindow::onTask2Clicked() {
     b.clear();
     c.clear();
     phi.clear();
-    
+
     buildLES(n * 2 - 1, x_0, x_n, a, b, c, phi);
     run(ae1, mu1, ae2, mu2, x_0, x_n, a, b, c, phi, y2);
 
-    double h1 = 1.0 / (double)(n - 1);
+    high_precision_type h1 = high_precision_type("1.0") / (high_precision_type)(n - 1);
     for (int i = 0; i < y.size(); i++) {
-        epss.push_back(std::abs(y[i] - y2[2 * i]));
+        if (epsilon1 < mp::abs(y[i] - y2[2 * i])) {
+            epsilon1 = mp::abs(y[i] - y2[2 * i]);
+            xerr = x_0 + i * h1;
+        }
     }
-    for (int i = 0; i < y.size(); i++) {
-        double x_i = x_0 + i * h1;
-        series->append(x_i, y[i]);
-        seriesve->append(x_i, y2[2 * i]);
-        pseries->append(x_i, std::abs(y[i] - y2[2 * i]));
+    std::cout << "eps: " << epsilon1.convert_to<std::string>() << std::endl;
+    std::cout << "x: " << xerr.convert_to<std::string>() << "n: " << n - 1 << std::endl;
+    if (n <= 10001){
+        for (int i = 0; i < y.size(); i++) {
+            high_precision_type x_i = x_0 + i * h1;
+            series->append(static_cast<double>(x_i), static_cast<double>(y[i]));
+            seriesve->append(static_cast<double>(x_i), static_cast<double>(y2[2 * i]));
+            pseries->append(static_cast<double>(x_i), static_cast<double>(mp::abs(y[i] - y2[2 * i])));
+            tableWidget->insertRow(tableWidget->rowCount());
+            tableWidget->setItem(tableWidget->rowCount() - 1, 0, new  QTableWidgetItem(QString::number(static_cast<double>(x_i))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 1, new QTableWidgetItem(QString::number(static_cast<double>(y[i]))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 2, new QTableWidgetItem(QString::number(static_cast<double>(y2[2 * i]))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 3, new QTableWidgetItem(QString::number(static_cast<double>(mp::abs(y[i] - y2[2 * i])))));
+        }
+    } else {
+        int skp = n / 1000;
+        for (int i = 0; i < y.size(); i += skp) {
+            high_precision_type x_i = x_0 + i * h1;
+            series->append(static_cast<double>(x_i), static_cast<double>(y[i]));
+            seriesve->append(static_cast<double>(x_i), static_cast<double>(y2[2 * i]));
+            pseries->append(static_cast<double>(x_i), static_cast<double>(mp::abs(y[i] - y2[2 * i])));
+            tableWidget->insertRow(tableWidget->rowCount());
+            tableWidget->setItem(tableWidget->rowCount() - 1, 0, new  QTableWidgetItem(QString::number(static_cast<double>(x_i))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 1, new QTableWidgetItem(QString::number(static_cast<double>(y[i]))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 2, new QTableWidgetItem(QString::number(static_cast<double>(y2[2 * i]))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 3, new QTableWidgetItem(QString::number(static_cast<double>(mp::abs(y[i] - y2[2 * i])))));
+        }
+        if (y.size() % skp != 1) {
+            series->append(static_cast<double>(x_n), static_cast<double>(y[y.size() - 1]));
+            seriesve->append(static_cast<double>(x_n), static_cast<double>(y2[y2.size() - 1]));
+            pseries->append(static_cast<double>(x_n), static_cast<double>(mp::abs(y[y.size() - 1] - y2[y2.size() - 1])));
+            tableWidget->insertRow(tableWidget->rowCount());
+            tableWidget->setItem(tableWidget->rowCount() - 1, 0, new  QTableWidgetItem(QString::number(static_cast<double>(x_n))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 1, new QTableWidgetItem(QString::number(static_cast<double>(y[y.size() - 1]))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 2, new QTableWidgetItem(QString::number(static_cast<double>(y2[y2.size() - 1]))));
+            tableWidget->setItem(tableWidget->rowCount() - 1, 3, new QTableWidgetItem(QString::number(static_cast<double>(mp::abs(y[y.size() - 1] - y2[y2.size() - 1])))));
+
+        }
     }
-    for(int i = 1; i < y.size(); i++){
-        double x_i = x_0 + i * h1;
-        tableWidget->insertRow(tableWidget->rowCount());
-        tableWidget->setItem(tableWidget->rowCount() - 1, 0, new QTableWidgetItem(QString::number(x_i)));
-        tableWidget->setItem(tableWidget->rowCount() - 1, 1, new QTableWidgetItem(QString::number(y[i])));
-        tableWidget->setItem(tableWidget->rowCount() - 1, 2, new QTableWidgetItem(QString::number(y2[2 * i])));
-        tableWidget->setItem(tableWidget->rowCount() - 1, 3, new QTableWidgetItem(QString::number(std::abs(y[i] - y2[2 * i]))));
-    }
-    auto max = std::max_element(epss.begin(), epss.end());
-    epsilon1 = *max;
-    xerr = x_0 + std::distance(epss.begin(), max) * h1;
-    pseries->setName("Погрешность " + QString::number(tabCounter));
+    pseries->setName("Погр., n = " + QString::number(n - 1));
     pchart->addSeries(pseries);
     pchart->createDefaultAxes();
     pchart->zoomReset();
-    series->setName("Численная" + QString::number(tabCounter));
-    seriesve->setName("Численная двойная" + QString::number(tabCounter));
+    series->setName("Числ., n = " + QString::number(n - 1));
+    seriesve->setName("Числ. дв., n = " + QString::number(n - 1));
     chart->addSeries(seriesve);
     chart->addSeries(series);
     chart->createDefaultAxes();
     chart->zoomReset();
-    tabWidget->addTab(tableWidget, "Основная задача " + QString::number(tabCounter));
-    tabCounter++;
+    tabWidget->addTab(tableWidget, "Осн., n = " + QString::number(n - 1));
+
 
     QString message = QString("Справка:  \n"
         "Для решения задачи использована равномерная сетка с числом разбиений n = %1 \n"
         "Задача должна быть решена с заданной точностью ε = 10e-6 \n"
         "Задача решена с точностью ε2 = %2 \n"
-        "Максимальная разность численных решений в общих узлах сетки наблюдается в точке x = %3 \n")
-        .arg(n)
-        .arg(epsilon1)
-        .arg(xerr);
+        "Максимальная разность численных решений в общих узлах сетки наблюдается в точке x = %3 ")
+        .arg(n - 1)
+        .arg(static_cast<double>(epsilon1))
+        .arg(static_cast<double>(xerr));
     summary->setPlainText(message);
     summary->setReadOnly(true);
 }

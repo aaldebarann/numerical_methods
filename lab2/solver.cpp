@@ -1,10 +1,10 @@
 #include"solver.h"
 
 //a, b, c, phi: n - 2; result: n;
-void run(double ae1, double mu1, double ae2, double mu2, double x_0, double x_n, std::vector<double>& a, std::vector<double>& b, std::vector<double>& c, std::vector<double>& phi, std::vector<double>& result) {
+void run(high_precision_type ae1, high_precision_type mu1, high_precision_type ae2, high_precision_type mu2, high_precision_type x_0, high_precision_type x_n, std::vector<high_precision_type>& a, std::vector<high_precision_type>& b, std::vector<high_precision_type>& c, std::vector<high_precision_type>& phi, std::vector<high_precision_type>& result) {
 
-    std::vector<double> alpha;
-    std::vector<double> beta;
+    std::vector<high_precision_type> alpha;
+    std::vector<high_precision_type> beta;
 
     alpha.push_back(ae1);
     beta.push_back(mu1);
@@ -23,10 +23,10 @@ void run(double ae1, double mu1, double ae2, double mu2, double x_0, double x_n,
     }
 }
 
-void buildLES(int n, double x_0, double x_n, std::vector<double>& a, std::vector<double>& b, std::vector<double>& c, std::vector<double>& phi) {
-    double h = (x_n - x_0) / (double)(n - 1);
+void buildLES(int n, high_precision_type x_0, high_precision_type x_n, std::vector<high_precision_type>& a, std::vector<high_precision_type>& b, std::vector<high_precision_type>& c, std::vector<high_precision_type>& phi) {
+    high_precision_type h = (x_n - x_0) / (high_precision_type)(n - 1);
     for (int i = 1; i < n - 1; i++) {
-        double x_i = x_0 + i * h;
+        high_precision_type x_i = x_0 + i * h;
         a.push_back(Run_Coeffs::A_i(x_i, h));
         b.push_back(Run_Coeffs::B_i(x_i, h));
         c.push_back(Run_Coeffs::C_i(x_i, h));

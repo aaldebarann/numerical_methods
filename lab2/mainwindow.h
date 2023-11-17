@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <boost/multiprecision/cpp_dec_float.hpp>
+
 #include <QMainWindow>
 #include <QChart>
 #include <QWidget>
@@ -47,9 +49,8 @@ public:
     QValueAxis *paxisY;
 
     int n = 10;
-    double epsilon1 = 0;
-    double xerr = 0;
-    int tabCounter = 1;
+    high_precision_type epsilon1 = 0;
+    high_precision_type xerr = 0;
 
     void onTask1Clicked();
     void onTask2Clicked();
