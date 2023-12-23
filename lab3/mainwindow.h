@@ -1,6 +1,4 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
-
+#pragma once
 #include <QMainWindow>
 #include <QWidget>
 #include <QVBoxLayout>
@@ -17,6 +15,7 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include "solver.h"
 
 
 class MainWindow : public QMainWindow
@@ -31,15 +30,26 @@ public:
     QLineEdit *maxsteps;
     QSlider *slider;
     QLabel *valueLabel;
-    std::vector<QSurface3DSeries> iterations;
-    QSurface3DSeries *dataSeries;
+    QLabel* label5;
+    QSurface3DSeries *iterations[10];
+    QSurface3DSeries *dataSeries = nullptr;
+    QSurface3DSeries *dataTrueSeries = nullptr;
+    solver slv;
+    std::vector<std::vector<std::vector<double>>> v;
+    std::vector<std::vector<std::vector<double>>> z;
+    double a, b, c, d;
 
-    MainWindow(QWidget *parent = nullptr);
+    MainWindow(QWidget* parent = nullptr);
+
     ~MainWindow();
 
-    bool sphereAdded{false};
+    bool activePlot{false};
+
     void showGraph();
+    void showTrueGraph();
+    void removeGraph();
+    void removeTrueGraph();
     void showTable();
+    void showSphere();
     void setT(int t);
 };
-#endif // MAINWINDOW_H
