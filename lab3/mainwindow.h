@@ -5,6 +5,8 @@
 #include <QHBoxLayout>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QRadioButton>
+#include <QButtonGroup>
 #include <QLabel>
 #include <QSlider>
 #include <QTableWidget>
@@ -38,7 +40,7 @@ public:
     std::vector<std::vector<std::vector<double>>> v;
     std::vector<std::vector<std::vector<double>>> z;
     double a, b, c, d;
-
+    int selectedTask = Functions::STRONGINA;
     MainWindow(QWidget* parent = nullptr);
 
     ~MainWindow();
@@ -52,4 +54,5 @@ public:
     void showTable();
     void showSphere();
     void setT(int t);
+    void onRadioButtonClicked();
 };
