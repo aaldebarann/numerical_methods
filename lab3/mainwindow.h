@@ -1,3 +1,6 @@
+#ifndef MAINWINDOW_H
+#define MAINWINDOW_H
+
 #pragma once
 #include <QMainWindow>
 #include <QWidget>
@@ -5,6 +8,8 @@
 #include <QHBoxLayout>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QRadioButton>
+#include <QButtonGroup>
 #include <QLabel>
 #include <QSlider>
 #include <QTableWidget>
@@ -28,6 +33,7 @@ public:
     QLineEdit *yn;
     QLineEdit *eps;
     QLineEdit *maxsteps;
+    QLineEdit *w;
     QSlider *slider;
     QLabel *valueLabel;
     QLabel* label5;
@@ -38,7 +44,7 @@ public:
     std::vector<std::vector<std::vector<double>>> v;
     std::vector<std::vector<std::vector<double>>> z;
     double a, b, c, d;
-
+    int selectedTask = 0;
     MainWindow(QWidget* parent = nullptr);
 
     ~MainWindow();
@@ -50,6 +56,8 @@ public:
     void removeGraph();
     void removeTrueGraph();
     void showTable();
-    void showSphere();
     void setT(int t);
+    void onRadioButtonClicked();
 };
+
+#endif // MAINWINDOW_H

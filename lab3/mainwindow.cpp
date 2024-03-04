@@ -18,9 +18,8 @@ MainWindow::MainWindow(QWidget* parent)
     container->setMaximumSize(screenSize);
     container->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-
     QWidget *controlsWidget = new QWidget();
-    controlsWidget->setMaximumWidth(200);
+    controlsWidget->setMaximumWidth(210);
     QVBoxLayout *controlLayout = new QVBoxLayout(controlsWidget);
 
     xn = new QLineEdit(this);
@@ -31,25 +30,31 @@ MainWindow::MainWindow(QWidget* parent)
     QLabel* label2 = new QLabel("Разбиений по y:", controlsWidget);
     eps = new QLineEdit(this);
     eps->setText("0.001");
-    QLabel* label3 = new QLabel("Требуемая точность:", controlsWidget);
+    QLabel* label3 = new QLabel("Контроль точности ε:", controlsWidget);
     maxsteps = new QLineEdit(this);
     maxsteps->setText("10000");
     QLabel* label4 = new QLabel("Макс. число шагов:", controlsWidget);
+    w = new QLineEdit(this);
+    w->setText("1.5");
+    QLabel* label6 = new QLabel("Параметр ω:", controlsWidget);
     label5 = new QLabel("", controlsWidget);
 
-    QPushButton *graphButton = new QPushButton("График", this);
-    QPushButton *trueGraphButton = new QPushButton("Аналит. решение", this);
+    QPushButton *graphButton = new QPushButton("Численное решение", this);
+    QPushButton *trueGraphButton = new QPushButton("Аналитическое решение", this);
     QPushButton *tableButton = new QPushButton("Таблица", this);
-    QPushButton *removegraphButton = new QPushButton("Скрыть рафик", this);
-    QPushButton *removetrueGraphButton = new QPushButton("Скрыть аналит. решение", this);
-    //QPushButton *graphSphereButton = new QPushButton("Сфера", this);
+    QPushButton *removegraphButton = new QPushButton("Скрыть численное решение", this);
+    QPushButton *removetrueGraphButton = new QPushButton("Скрыть аналитическое решение", this);
+    QRadioButton *taskVariant1 = new QRadioButton("Зейдель", this);
+    QRadioButton *taskVariant2 = new QRadioButton("МВР", this);
+    taskVariant1->setChecked(true);
 
     connect(graphButton, &QPushButton::clicked, this, &MainWindow::showGraph);
     connect(trueGraphButton, &QPushButton::clicked, this, &MainWindow::showTrueGraph);
     connect(removegraphButton, &QPushButton::clicked, this, &MainWindow::removeGraph);
     connect(removetrueGraphButton, &QPushButton::clicked, this, &MainWindow::removeTrueGraph);
     connect(tableButton, &QPushButton::clicked, this, &MainWindow::showTable);
-    //connect(graphSphereButton, &QPushButton::clicked, this, &MainWindow::showSphere);
+    connect(taskVariant1, &QRadioButton::clicked, this, &MainWindow::onRadioButtonClicked);
+    connect(taskVariant2, &QRadioButton::clicked, this, &MainWindow::onRadioButtonClicked);
 
     slider = new QSlider(Qt::Horizontal);
     slider->setMinimum(1);
@@ -61,7 +66,9 @@ MainWindow::MainWindow(QWidget* parent)
         valueLabel->setText("Снимок: " + QString::number(value));
         setT(value);
     });
-    QLabel* label6 = new QLabel(" \n ", controlsWidget);
+
+    controlLayout->addWidget(taskVariant1);
+    controlLayout->addWidget(taskVariant2);
     controlLayout->addWidget(label1);
     controlLayout->addWidget(xn);
     controlLayout->addWidget(label2);
@@ -70,6 +77,8 @@ MainWindow::MainWindow(QWidget* parent)
     controlLayout->addWidget(eps);
     controlLayout->addWidget(label4);
     controlLayout->addWidget(maxsteps);
+    controlLayout->addWidget(label6);
+    controlLayout->addWidget(w);
     controlLayout->addWidget(graphButton);
     controlLayout->addWidget(trueGraphButton);
     controlLayout->addWidget(tableButton);
@@ -78,8 +87,7 @@ MainWindow::MainWindow(QWidget* parent)
     controlLayout->addWidget(label5);
     controlLayout->addWidget(valueLabel);
     controlLayout->addWidget(slider);
-    controlLayout->addWidget(label6);
-    //controlLayout->addWidget(graphSphereButton);
+
     QHBoxLayout *mainLayout = new QHBoxLayout(centralWidget);
     mainLayout->addWidget(controlsWidget);
     mainLayout->addWidget(container);
@@ -107,7 +115,8 @@ void MainWindow::showTrueGraph(){
     int Yn = yn->text().toInt();
     double h = abs(a - b) / Xn;
     double k = abs(c - d) / Yn;
-
+    double (*true_u)(double, double);
+    true_u = u_real::u;
     if (view->hasSeries(dataTrueSeries)) view->removeSeries(dataTrueSeries);
 
     dataTrueSeries = new QSurface3DSeries;
@@ -115,30 +124,32 @@ void MainWindow::showTrueGraph(){
     for (int j = 0; j <= Yn; j++) {
         QSurfaceDataRow* row = new QSurfaceDataRow;
         for (int i = 0; i <= Xn; i++) {
-            row->append(QSurfaceDataItem(QVector3D(h * i, u_real::u(h * i, k * j), k * j)));
+            row->append(QSurfaceDataItem(QVector3D(a + h * i, true_u(a + h * i, c + k * j), c + k * j)));
         }
         dataTrueSeries->dataProxy()->addRow(row);
     }
     dataTrueSeries->setItemLabelFormat("True solution @xLabel @yLabel @zLabel");
-    //dataTrueSeries->setBaseGradient(QLinearGradient(b, d, a ,c));
-    dataTrueSeries->setBaseColor(QColor(255, 0, 0, 255));
+    //dataTrueSeries->setBaseColor(QColor(255, 0, 0, 255));
     //dataTrueSeries->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
-    //dataTrueSeries->setTextureFile("iceberg.jpg");
+    dataTrueSeries->setTextureFile("iceberg.jpg");
     view->addSeries(dataTrueSeries);
     view->axisX()->setRange(a, b);
     view->axisZ()->setRange(c, d);
-    view->axisY()->setRange(0, 3);
+    view->axisY()->setRange(-1, 1);
 }
 
 void MainWindow::showGraph() {
     int Xn = xn->text().toInt();
     int Yn = yn->text().toInt();
     int maxN = maxsteps->text().toInt();
+    double ww = w->text().toDouble();
     double epsilon = eps->text().toDouble();
-    if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon) {
+    if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww) {
+        slv.task = selectedTask;
+        slv.w = ww;
         slv.solve(Xn, Yn, a, b, c, d, epsilon, maxN, v, z);
     }
-    else if (!view->hasSeries(dataSeries)) { //hehehehehehehehe
+    else if (!view->hasSeries(dataSeries)) {
     }
     else return;
     if (view->hasSeries(dataSeries)) view->removeSeries(dataSeries);
@@ -148,20 +159,22 @@ void MainWindow::showGraph() {
     for (int j = 0; j <= slv.M; j++) {
         QSurfaceDataRow* row = new QSurfaceDataRow;
         for (int i = 0; i <= slv.N; i++) {
-            row->append(QSurfaceDataItem(QVector3D(slv.h * i, v[9][i][j], slv.k * j)));
+            row->append(QSurfaceDataItem(QVector3D(a + slv.h * i, v[9][i][j], c + slv.k * j)));
         }
         dataSeries->dataProxy()->addRow(row);
     }
     dataSeries->setItemLabelFormat("solution @xLabel @yLabel @zLabel");
     dataSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
-    //dataSeries->setBaseGradient(QLinearGradient(a, c, b, d));
     //dataSeries->setTextureFile("iceberg.jpg");
     dataSeries->setBaseColor(QColor(0, 0, 255, 255));
     view->addSeries(dataSeries);
     view->axisX()->setRange(a, b);
     view->axisZ()->setRange(c, d);
-    view->axisY()->setRange(1, 3);
-    label5->setText("Наибольшая погрешность равна\n" + QString::number(slv.max_z) + ", достигнута за\n" + QString::number(slv.it) + " итераций" );
+    view->axisY()->setRange(-1, 1);
+
+    label5->setText("Норма общей погрешности\nравна " + QString::number(slv.max_z) + ", достигнута\nза " + QString::number(slv.it) + " итераций\n" +
+                    "Точность на выходе: " + QString::number(slv.achieved_accuracy) +
+                    "\nНорма невязки: " + QString::number(slv.max_r));
     for(size_t i = 0; i < 10; i++){
         iterations[i] = new QSurface3DSeries;
     }
@@ -169,7 +182,7 @@ void MainWindow::showGraph() {
         for (int j = 0; j <= slv.M; j++) {
             QSurfaceDataRow* row = new QSurfaceDataRow;
             for (int i = 0; i <= slv.N; i++) {
-                row->append(QSurfaceDataItem(QVector3D(slv.h * i, v[t][i][j], slv.k * j)));
+                row->append(QSurfaceDataItem(QVector3D(a + slv.h * i, v[t][i][j], c + slv.k * j)));
             }
             iterations[t]->dataProxy()->addRow(row);
         }
@@ -185,8 +198,8 @@ void MainWindow::showGraph() {
 
 void MainWindow::removeGraph(){
     if (view->hasSeries(dataSeries)) view->removeSeries(dataSeries);
-    for(auto it : view->seriesList()) {
-        view->removeSeries(it);
+    for (auto it : view->seriesList()) {
+        if (it != dataTrueSeries) view->removeSeries(it);
     }
 }
 
@@ -194,51 +207,19 @@ void MainWindow::removeTrueGraph(){
     if (view->hasSeries(dataTrueSeries)) view->removeSeries(dataTrueSeries);
 }
 
-void MainWindow::showSphere() {
-    int Xn = xn->text().toInt();
-    int Yn = yn->text().toInt();
-    int maxN = maxsteps->text().toInt();
-    double epsilon = eps->text().toInt();
-
-    dataSeries = new QSurface3DSeries;
-    dataSeries->setItemLabelFormat(QStringLiteral("(@xLabel @yLabel @zLabel)"));
-    dataSeries->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
-    dataSeries->setFlatShadingEnabled(false);
-
-    QSurfaceDataArray *data = new QSurfaceDataArray;
-    QSurfaceDataRow *row = new QSurfaceDataRow;
-    QSurfaceDataItem item;
-
-    double radius = 2.0f;
-    double skipphi = 360 / Xn;
-    double sr = radius / Yn;
-    for (double phi = 0; phi <= 360; phi += skipphi) {
-        row = new QSurfaceDataRow;
-        for (double n = 0; n <= radius; n += sr) {
-            double x = n * cos(qDegreesToRadians(phi));
-            double y = n * sin(qDegreesToRadians(phi));
-            double z = (pow(x, 2) - pow(y, 2)) / 2;
-            item.setPosition(QVector3D(x, y, z));
-            row->append(item);
-        }
-        data->append(row);
+void MainWindow::onRadioButtonClicked(){
+    QRadioButton *selectedButton = qobject_cast<QRadioButton*>(sender());
+    if (selectedButton->text() == "Зейдель") {
+        selectedTask = 0;
+    } else if (selectedButton->text() == "МВР") {
+        selectedTask = 1;
     }
-    dataSeries->setName(QString("Сфера r = " + QString::number(radius)));
-    dataSeries->dataProxy()->resetArray(data);
-    dataSeries->setItemLabelFormat("Sphere 1 @xLabel @yLabel @zLabel");
-    //dataSeries->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
-    dataSeries->setTextureFile("iceberg.jpg");
-    view->addSeries(dataSeries);
-    view->axisX()->setRange(-2 * radius, 2 * radius);
-    view->axisY()->setRange(-radius, radius);
-    view->axisZ()->setRange(-2 * radius, 2 * radius);
 }
 
 void MainWindow::setT(int t){
     if (slv.valid == 0) return;
-    if (view->hasSeries(dataSeries)) view->removeSeries(dataSeries);
     for (auto it : view->seriesList()) {
-        if(it != dataTrueSeries) view->removeSeries(it);
+        if (it != dataTrueSeries) view->removeSeries(it);
     }
     view->addSeries(iterations[t]);
 }
