@@ -18,6 +18,7 @@
 #include <QChartView>
 #include <QLineSeries>
 #include <stack>
+#include "solver.h"
 
 class MainWindow : public QMainWindow
 {
@@ -29,23 +30,20 @@ public:
 
     QLabel *valueLabel;
     QChart *chart;
-    QChartView *chartView; // график
-    QLineEdit *n;   // число разбиений
-    QLineEdit *bca; // граничное условие в a
-    QLineEdit *bcb; // граничное условие в b
-    QLineEdit *eps; // параметр выхода по точности
+    QChartView *chartView;
+    QLineEdit *n;
+    QLineEdit *bca;
+    QLineEdit *bcb;
     QLabel* summary;
 
     std::stack<QLineSeries*> seriesStack;
     std::stack<QLineSeries*> solutionStack;
     std::stack<QLineSeries*> errorStack;
+    solver sl;
 
-    // можно по сути создать стек с самими решениями, добавлять в него решения при новывх условиях и удалять при удалении с графика
-    // чтобы не считать одно и то же при нажатии на кнопки решения, аналитического решения и ошибки
-
-    int function_choice = 0; // выбор из трёх функций
-    int task_choice = 0; // выбор из тестовой функции, обычной и периодической
-    int graph_choice = 0; // выбор графика функции, производной или второй производной
+    int function_choice = 0;
+    int task_choice = 0;
+    int graph_choice = 0;
 
     void showGraph();
     void showErrorGraph();

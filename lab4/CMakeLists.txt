@@ -16,6 +16,10 @@ set(PROJECT_SOURCES
         main.cpp
         mainwindow.cpp
         mainwindow.h
+        solver.h
+        solver.cpp
+        functions.h
+        functions.cpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
