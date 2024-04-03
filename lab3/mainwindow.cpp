@@ -1,5 +1,4 @@
 #include "mainwindow.h"
-using high_precision_type = boost::multiprecision::cpp_dec_float_50;
 
 
 MainWindow::MainWindow(QWidget* parent)
@@ -163,7 +162,7 @@ void MainWindow::showTrueGraph(){
         for (int j = 0; j <= Yn; j++) {
             QSurfaceDataRow* row = new QSurfaceDataRow;
             for (int i = 0; i <= Xn; i++) {
-                row->append(QSurfaceDataItem(QVector3D(static_cast<double>(a + h * i), static_cast<double>(true_u(a + h * i, c + k * j)), static_cast<double>(c + k * j))));
+                row->append(QSurfaceDataItem(QVector3D(a + h * i, true_u(a + h * i, c + k * j), c + k * j)));
             }
             dataTrueSeries->dataProxy()->addRow(row);
         }
@@ -175,7 +174,7 @@ void MainWindow::showTrueGraph(){
         for (int j = 0; j <= 2 * Yn; j++) {
             QSurfaceDataRow* row = new QSurfaceDataRow;
             for (int i = 0; i <= 2 * Xn; i++) {
-                row->append(QSurfaceDataItem(QVector3D(static_cast<double>(a + (h / 2) * i), static_cast<double>(v2[9][i][j]), static_cast<double>(c + (k / 2) * j))));
+                row->append(QSurfaceDataItem(QVector3D(a + (h / 2) * i, v2[9][i][j], c + (k / 2) * j)));
             }
             dataTrueSeries->dataProxy()->addRow(row);
         }
@@ -185,8 +184,8 @@ void MainWindow::showTrueGraph(){
     //dataTrueSeries->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
     dataTrueSeries->setTextureFile("iceberg.jpg");
     view->addSeries(dataTrueSeries);
-    view->axisX()->setRange(static_cast<double>(a), static_cast<double>(b));
-    view->axisZ()->setRange(static_cast<double>(c), static_cast<double>(d));
+    view->axisX()->setRange(a, b);
+    view->axisZ()->setRange(c, d);
     view->axisY()->setRange(-1, 1);
 }
 
@@ -195,10 +194,10 @@ void MainWindow::showGraph() {
     int Yn = yn->text().toInt();
     int maxN = maxsteps->text().toInt();
     int maxN2 = maxsteps2->text().toInt();
-    type_d ww = type_d(w->text().toStdString());
-    type_d epsilon = type_d(eps->text().toStdString());
-    type_d ww2 = type_d(w2->text().toStdString());
-    type_d epsilon2 = type_d(eps2->text().toStdString());
+    type_d ww = w->text().toDouble();
+    type_d epsilon = eps->text().toDouble();
+    type_d ww2 = w2->text().toDouble();
+    type_d epsilon2 = eps2->text().toDouble();
     lastPlotButton = false;
     if (selectedTask == Functions::test){
         if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww) {
@@ -216,7 +215,7 @@ void MainWindow::showGraph() {
         for (int j = 0; j <= slv.M; j++) {
             QSurfaceDataRow* row = new QSurfaceDataRow;
             for (int i = 0; i <= slv.N; i++) {
-                row->append(QSurfaceDataItem(QVector3D(static_cast<double>(a + slv.h * i), static_cast<double>(v[9][i][j]), static_cast<double>(c + slv.k * j))));
+                row->append(QSurfaceDataItem(QVector3D(a + slv.h * i, v[9][i][j], c + slv.k * j)));
             }
             dataSeries->dataProxy()->addRow(row);
         }
@@ -225,8 +224,8 @@ void MainWindow::showGraph() {
         //dataSeries->setTextureFile("iceberg.jpg");
         dataSeries->setBaseColor(QColor(0, 0, 255, 255));
         view->addSeries(dataSeries);
-        view->axisX()->setRange(static_cast<double>(a), static_cast<double>(b));
-        view->axisZ()->setRange(static_cast<double>(c), static_cast<double>(d));
+        view->axisX()->setRange(a, b);
+        view->axisZ()->setRange(c, d);
         view->axisY()->setRange(-1, 1);
 
         for(size_t i = 0; i < 10; i++){
@@ -236,7 +235,7 @@ void MainWindow::showGraph() {
             for (int j = 0; j <= slv.M; j++) {
                 QSurfaceDataRow* row = new QSurfaceDataRow;
                 for (int i = 0; i <= slv.N; i++) {
-                    row->append(QSurfaceDataItem(QVector3D(static_cast<double>(a + slv.h * i), static_cast<double>(v[t][i][j]), static_cast<double>(c + slv.k * j))));
+                    row->append(QSurfaceDataItem(QVector3D(a + slv.h * i, v[t][i][j], c + slv.k * j)));
                 }
                 iterations[t]->dataProxy()->addRow(row);
             }
@@ -250,8 +249,8 @@ void MainWindow::showGraph() {
             for (int i = 0; i <= slv.N; i++) {
                 if(abs(v[9][i][j] - u_test::u(a + slv.h * i, c + slv.k * j)) >= slv.max_z){
                     slv.max_z = abs(v[9][i][j] - u_test::u(a + slv.h * i, c + slv.k * j));
-                    slv.max_x = static_cast<double>(a + slv.h * i);
-                    slv.max_y = static_cast<double>(c + slv.k * j);
+                    slv.max_x = a + slv.h * i;
+                    slv.max_y = c + slv.k * j;
                 }
             }
         }
@@ -275,7 +274,7 @@ void MainWindow::showGraph() {
         for (int j = 0; j <= slv.M; j++) {
             QSurfaceDataRow* row = new QSurfaceDataRow;
             for (int i = 0; i <= slv.N; i++) {
-                row->append(QSurfaceDataItem(QVector3D(static_cast<double>(a + slv.h * i), static_cast<double>(v[9][i][j]), static_cast<double>(c + slv.k * j))));
+                row->append(QSurfaceDataItem(QVector3D(a + slv.h * i, v[9][i][j], c + slv.k * j)));
             }
             dataSeries->dataProxy()->addRow(row);
         }
@@ -284,8 +283,8 @@ void MainWindow::showGraph() {
         //dataSeries->setTextureFile("iceberg.jpg");
         dataSeries->setBaseColor(QColor(0, 0, 255, 255));
         view->addSeries(dataSeries);
-        view->axisX()->setRange(static_cast<double>(a), static_cast<double>(b));
-        view->axisZ()->setRange(static_cast<double>(c), static_cast<double>(d));
+        view->axisX()->setRange(a, b);
+        view->axisZ()->setRange(c, d);
         view->axisY()->setRange(-1, 1);
 
         for(size_t i = 0; i < 10; i++){
@@ -296,7 +295,7 @@ void MainWindow::showGraph() {
             for (int j = 0; j <= slv.M; j++) {
                 QSurfaceDataRow* row = new QSurfaceDataRow;
                 for (int i = 0; i <= slv.N; i++) {
-                    row->append(QSurfaceDataItem(QVector3D(static_cast<double>(a + slv.h * i), static_cast<double>(v[t][i][j]), static_cast<double>(c + slv.k * j))));
+                    row->append(QSurfaceDataItem(QVector3D(a + slv.h * i, v[t][i][j], c + slv.k * j)));
                 }
                 iterations[t]->dataProxy()->addRow(row);
             }
@@ -310,7 +309,7 @@ void MainWindow::showGraph() {
             for (int j = 0; j <= slv2.M; j++) {
                 QSurfaceDataRow* row = new QSurfaceDataRow;
                 for (int i = 0; i <= slv2.N; i++) {
-                    row->append(QSurfaceDataItem(QVector3D(static_cast<double>(a + slv2.h * i), static_cast<double>(v2[t][i][j]), static_cast<double>(c + slv2.k * j))));
+                    row->append(QSurfaceDataItem(QVector3D(a + slv2.h * i, v2[t][i][j], c + slv2.k * j)));
                 }
                 iterations2[t]->dataProxy()->addRow(row);
             }
@@ -324,8 +323,8 @@ void MainWindow::showGraph() {
             for (int i = 0; i <= slv.N; i++) {
                 if(abs(v[9][i][j] - v2[9][2 * i][2 * j]) > slv.max_z){
                     slv.max_z = abs(v[9][i][j] - v2[9][2 * i][2 * j]);
-                    slv.max_x = static_cast<double>(a + slv.h * i);
-                    slv.max_y = static_cast<double>(c + slv.k * j);
+                    slv.max_x = a + slv.h * i;
+                    slv.max_y = c + slv.k * j;
                 }
             }
         }
@@ -386,38 +385,38 @@ void MainWindow::showTable() {
     if(slv.task == Functions::test) {
         for (int i = 0; i <= slv.N; i++) {
             for (int j = 0; j <= slv.M; j++) {
-                tableWidget1->setItem(j, i, new QTableWidgetItem(QString::number(static_cast<double>(u_test::u(a + slv.h * i, c + slv.k * j)))));
+                tableWidget1->setItem(j, i, new QTableWidgetItem(QString::number(u_test::u(a + slv.h * i, c + slv.k * j))));
             }
         }
         tabWidget->addTab(tableWidget1, "Значения точного решения");
         for (int i = 0; i <= slv.N; i++) {
             for (int j = 0; j <= slv.M; j++) {
-                tableWidget2->setItem(j, i, new QTableWidgetItem(QString::number(static_cast<double>(v[9][i][j]))));
+                tableWidget2->setItem(j, i, new QTableWidgetItem(QString::number(v[9][i][j])));
             }
         }
         tabWidget->addTab(tableWidget2, "Значения численного решения");
         for (int i = 0; i <= slv.N; i++) {
             for (int j = 0; j <= slv.M; j++) {
-                tableWidget3->setItem(j, i, new QTableWidgetItem(QString::number(static_cast<double>(z[9][i][j]))));
+                tableWidget3->setItem(j, i, new QTableWidgetItem(QString::number(z[9][i][j])));
             }
         }
         tabWidget->addTab(tableWidget3, "Значения погрешности");
     } else {
         for (int i = 0; i <= slv.N; i++) {
             for (int j = 0; j <= slv.M; j++) {
-                tableWidget1->setItem(j, i, new QTableWidgetItem(QString::number(static_cast<double>(v[9][i][j]))));
+                tableWidget1->setItem(j, i, new QTableWidgetItem(QString::number(v[9][i][j])));
             }
         }
         tabWidget->addTab(tableWidget1, "Значения численного решения v");
         for (int i = 0; i <= slv.N; i++) {
             for (int j = 0; j <= slv.M; j++) {
-                tableWidget2->setItem(j, i, new QTableWidgetItem(QString::number(static_cast<double>(v2[9][2 * i][2 * j]))));
+                tableWidget2->setItem(j, i, new QTableWidgetItem(QString::number(v2[9][2 * i][2 * j])));
             }
         }
         tabWidget->addTab(tableWidget2, "Значения численного решения v2");
         for (int i = 0; i <= slv.N; i++) {
             for (int j = 0; j <= slv.M; j++) {
-                tableWidget3->setItem(j, i, new QTableWidgetItem(QString::number(static_cast<double>(abs(v[9][i][j] - v2[9][2 * i][2 * j])))));
+                tableWidget3->setItem(j, i, new QTableWidgetItem(QString::number(abs(v[9][i][j] - v2[9][2 * i][2 * j]))));
             }
         }
         tabWidget->addTab(tableWidget3, "Значения разности v - v2");
@@ -441,15 +440,15 @@ void MainWindow::showSummary(){
         summary->setText("<center>"
                          "<h3>"
                          "<p> Для решения тестовой задачи использованы сетка с числом разбиений по x N = " + QString::number(slv.N) + "</p><p> и числом разбиений по y m = " + QString::number(slv.M) +
-                         " метод верхней релаксации с параметром ω = " + QString::number(static_cast<double>(slv.w)) + ", применены критерии" +
-                         " остановки по точности ε<sub>мет</sub> = " + QString::number(static_cast<double>(slv.epsilon)) + " и по числу итераций N<sub>max</sub> = " + QString::number(slv.max_it) +
+                         " метод верхней релаксации с параметром ω = " + QString::number(slv.w) + ", применены критерии" +
+                         " остановки по точности ε<sub>мет</sub> = " + QString::number(slv.epsilon) + " и по числу итераций N<sub>max</sub> = " + QString::number(slv.max_it) +
                          "</p><p> На решение схемы (СЛАУ) затрачено итераций N = " + QString::number(slv.it) +
-                         " и достигнута точность итерационного метода ε<sup>(N)</sup> = " + QString::number(static_cast<double>(slv.achieved_accuracy)) +
-                         "</p><p> Схема (СЛАУ) решена с невязкой || R<sup>(N)</sup>|| = " + QString::number(static_cast<double>(slv.max_r)) +
+                         " и достигнута точность итерационного метода ε<sup>(N)</sup> = " + QString::number(slv.achieved_accuracy) +
+                         "</p><p> Схема (СЛАУ) решена с невязкой || R<sup>(N)</sup>|| = " + QString::number(slv.max_r) +
                          " для невязки СЛАУ использована евклидова норма" +
                          "</p><p> Тестовая задача должна быть решена с погрешностью не более ε = 0.5⋅10<sup>-6</sup>" +
-                         "</p><p> Задача решена с погрешностью ε<sub>1</sub> = " + QString::number(static_cast<double>(slv.max_z)) +
-                         "</p><p> Максимальное отклонение точного и численного решений наблюдается в узле x = " + QString::number(static_cast<double>(slv.max_x)) + ", y = " + QString::number(static_cast<double>(slv.max_y)) +
+                         "</p><p> Задача решена с погрешностью ε<sub>1</sub> = " + QString::number(slv.max_z) +
+                         "</p><p> Максимальное отклонение точного и численного решений наблюдается в узле x = " + QString::number(slv.max_x) + ", y = " + QString::number(slv.max_y) +
                          "</p><p> В качестве начального приближения использована линейная интерполяция по x" +
                          "</p></h3>"
                          "</center>");
@@ -457,21 +456,21 @@ void MainWindow::showSummary(){
         summary->setText("<center>"
                          "<h3>"
                          "<p> Для решения основной задачи использованы сетка с числом разбиений по x N = " + QString::number(slv.N) + "</p><p> и числом разбиений по y m = " + QString::number(slv.M) +
-                         " метод верхней релаксации с параметром ω = " + QString::number(static_cast<double>(slv.w)) + ", применены критерии" +
-                         " остановки по точности ε<sub>мет</sub> = " + QString::number(static_cast<double>(slv.epsilon)) + " и по числу итераций N<sub>max</sub> = " + QString::number(slv.max_it) +
+                         " метод верхней релаксации с параметром ω = " + QString::number(slv.w) + ", применены критерии" +
+                         " остановки по точности ε<sub>мет</sub> = " + QString::number(slv.epsilon) + " и по числу итераций N<sub>max</sub> = " + QString::number(slv.max_it) +
                          "</p><p> На решение схемы (СЛАУ) затрачено итераций N = " + QString::number(slv.it) +
-                         " и достигнута точность итерационного метода ε<sup>(N)</sup> = " + QString::number(static_cast<double>(slv.achieved_accuracy)) +
-                         "</p><p> Схема (СЛАУ) решена с невязкой || R<sup>(N)</sup>|| = " + QString::number(static_cast<double>(slv.max_r)) +
+                         " и достигнута точность итерационного метода ε<sup>(N)</sup> = " + QString::number(slv.achieved_accuracy) +
+                         "</p><p> Схема (СЛАУ) решена с невязкой || R<sup>(N)</sup>|| = " + QString::number(slv.max_r) +
                          " для невязки СЛАУ использована евклидова норма" +
-                         "</p><p> Для контроля точности решения использована сетка с половинным шагом, метод верхней релаксации с параметром ω<sub>2</sub> = " + QString::number(static_cast<double>(slv2.w)) +
-                         " применены критерии остановки по точности ε <sub>мет-2</sub> = " + QString::number(static_cast<double>(slv2.epsilon)) + "и по числу итераций N<sub>max-2</sub> = " + QString::number(slv2.max_it) +
+                         "</p><p> Для контроля точности решения использована сетка с половинным шагом, метод верхней релаксации с параметром ω<sub>2</sub> = " + QString::number(slv2.w) +
+                         " применены критерии остановки по точности ε <sub>мет-2</sub> = " + QString::number(slv2.epsilon) + "и по числу итераций N<sub>max-2</sub> = " + QString::number(slv2.max_it) +
                          "</p><p> На решение задачи (СЛАУ) затрачено итераций N2 = " + QString::number(slv2.it) +
-                         " и достигнута точность итерационного метода ε<sup>(N2)</sup> = " + QString::number(static_cast<double>(slv2.achieved_accuracy)) +
-                         "</p><p> Схема (СЛАУ) на сетке с половинным шагом решена с невязкой\n" + " || R<sup>(N2)</sup>|| = " + QString::number(static_cast<double>(slv2.max_r)) +
+                         " и достигнута точность итерационного метода ε<sup>(N2)</sup> = " + QString::number(slv2.achieved_accuracy) +
+                         "</p><p> Схема (СЛАУ) на сетке с половинным шагом решена с невязкой\n" + " || R<sup>(N2)</sup>|| = " + QString::number(slv2.max_r) +
                          " для невязки СЛАУ использована евклидова норма" +
                          "</p><p> Основная задача должна быть решена с погрешностью не более ε = 0.5⋅10<sup>-6</sup>" +
-                         "</p><p> Задача решена с погрешностью ε<sub>2</sub> = " + QString::number(static_cast<double>(slv.max_z)) +
-                         "</p><p> Максимальное отклонение численных решений на основной сетке и сетке с половинным шагом наблюдается в узле x = " + QString::number(static_cast<double>(slv.max_x)) + ", y = " + QString::number(static_cast<double>(slv.max_y)) +
+                         "</p><p> Задача решена с погрешностью ε<sub>2</sub> = " + QString::number(slv.max_z) +
+                         "</p><p> Максимальное отклонение численных решений на основной сетке и сетке с половинным шагом наблюдается в узле x = " + QString::number(slv.max_x) + ", y = " + QString::number(slv.max_y) +
                          "</p><p> В качестве начального приближения на обоих сетках использована линейная интерполяция по x" +
                          "</p></h3>"
                          "</center>");
@@ -484,10 +483,10 @@ void MainWindow::showPGraph(){
     int Yn = yn->text().toInt();
     int maxN = maxsteps->text().toInt();
     int maxN2 = maxsteps2->text().toInt();
-    type_d ww = type_d(w->text().toStdString());
-    type_d epsilon = type_d(eps->text().toStdString());
-    type_d ww2 = type_d(w2->text().toStdString());
-    type_d epsilon2 = type_d(eps2->text().toStdString());
+    type_d ww = w->text().toDouble();
+    type_d epsilon = eps->text().toDouble();
+    type_d ww2 = w2->text().toDouble();
+    type_d epsilon2 = eps2->text().toDouble();
     if (selectedTask == Functions::test){
         if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww) {
             return;
@@ -502,7 +501,7 @@ void MainWindow::showPGraph(){
         for (int j = 0; j <= slv.M; j++) {
             QSurfaceDataRow* row = new QSurfaceDataRow;
             for (int i = 0; i <= slv.N; i++) {
-                row->append(QSurfaceDataItem(QVector3D(static_cast<double>(a + slv.h * i), static_cast<double>(z[9][i][j]), static_cast<double>(c + slv.k * j))));
+                row->append(QSurfaceDataItem(QVector3D(a + slv.h * i, z[9][i][j], c + slv.k * j)));
             }
             dataPSeries->dataProxy()->addRow(row);
         }
@@ -511,8 +510,8 @@ void MainWindow::showPGraph(){
         //dataSeries->setTextureFile("iceberg.jpg");
         dataPSeries->setBaseColor(QColor(0, 0, 255, 255));
         view->addSeries(dataPSeries);
-        view->axisX()->setRange(static_cast<double>(a), static_cast<double>(b));
-        view->axisZ()->setRange(static_cast<double>(c), static_cast<double>(d));
+        view->axisX()->setRange(a, b);
+        view->axisZ()->setRange(c, d);
         view->axisY()->setRange(-1, 1);
     }
     if (selectedTask == Functions::tmain){
@@ -529,7 +528,7 @@ void MainWindow::showPGraph(){
         for (int j = 0; j <= slv.M; j++) {
             QSurfaceDataRow* row = new QSurfaceDataRow;
             for (int i = 0; i <= slv.N; i++) {
-                row->append(QSurfaceDataItem(QVector3D(static_cast<double>(a + slv.h * i), static_cast<double>(v[9][i][j] - v2[9][2 * i][2 * j]), static_cast<double>(c + slv.k * j))));
+                row->append(QSurfaceDataItem(QVector3D(a + slv.h * i, v[9][i][j] - v2[9][2 * i][2 * j], c + slv.k * j)));
             }
             dataPSeries->dataProxy()->addRow(row);
         }
@@ -538,8 +537,8 @@ void MainWindow::showPGraph(){
         //dataSeries->setTextureFile("iceberg.jpg");
         dataPSeries->setBaseColor(QColor(0, 0, 255, 255));
         view->addSeries(dataPSeries);
-        view->axisX()->setRange(static_cast<double>(a), static_cast<double>(b));
-        view->axisZ()->setRange(static_cast<double>(c), static_cast<double>(d));
+        view->axisX()->setRange(a, b);
+        view->axisZ()->setRange(c, d);
         view->axisY()->setRange(-1, 1);
     }
     slider->setValue(10);

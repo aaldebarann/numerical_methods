@@ -23,9 +23,8 @@
 #include <cmath>
 #include "solver.h"
 
-#define type_d high_precision_type
+#define type_d double
 
-using high_precision_type = boost::multiprecision::cpp_dec_float_50;
 
 class MainWindow : public QMainWindow
 {

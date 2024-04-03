@@ -1,9 +1,9 @@
 #include "solver.h"
-#define type_d high_precision_type
-using high_precision_type = boost::multiprecision::cpp_dec_float_50;
+#define type_d double
+#define M_PI 3.14159265358979323846
 
 type_d u_test::u(type_d x, type_d y) {
-    return exp(sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * x * y) * sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * x * y));
+    return exp(sin(M_PI * x * y) * sin(M_PI * x * y));
 }
 
 type_d u_test::u0y(type_d y) {
@@ -11,7 +11,7 @@ type_d u_test::u0y(type_d y) {
 }
 
 type_d u_test::u1y(type_d y) {
-    return exp(sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * y) * sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * y));
+    return exp(sin(M_PI * y) * sin(M_PI * y));
 }
 
 type_d u_test::ux0(type_d x) {
@@ -19,19 +19,19 @@ type_d u_test::ux0(type_d x) {
 }
 
 type_d u_test::ux1(type_d x) {
-    return exp(sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * x) * sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * x));
+    return exp(sin(M_PI * x) * sin(M_PI * x));
 }
 
 type_d u_test::f(type_d x, type_d y) {
-    return 0.5 * u(x, y) * boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * (x * x + y * y) * (- 1 - 4 * cos(2 * boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * x * y) + cos(4 * boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * x * y));
+    return 0.5 * u(x, y) * M_PI * M_PI * (x * x + y * y) * (- 1 - 4 * cos(2 * M_PI * x * y));
 }
 
 type_d u_main::u0y(type_d y) {
-    return sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * y);
+    return sin(M_PI * y);
 }
 
 type_d u_main::u1y(type_d y) {
-    return sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * y);
+    return sin(M_PI * y);
 }
 
 type_d u_main::ux0(type_d x) {
@@ -43,7 +43,7 @@ type_d u_main::ux1(type_d x) {
 }
 
 type_d u_main::f(type_d x, type_d y) {
-    return sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * x * y) * sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * x * y);
+    return sin(M_PI * x * y) * sin(M_PI * x * y);
 }
 
 solver::solver() {

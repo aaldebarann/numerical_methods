@@ -1,11 +1,8 @@
 #pragma once
 #include <vector>
 #include <utility>
-#include <boost/multiprecision/cpp_dec_float.hpp>
-#include <boost/math/constants/constants.hpp>
 
-#define type_d high_precision_type
-using high_precision_type = boost::multiprecision::cpp_dec_float_50;
+#define type_d double
 
 namespace u_test {
 type_d u(type_d x, type_d y);
