@@ -12,6 +12,7 @@
 #include <QButtonGroup>
 #include <QLabel>
 #include <QSlider>
+#include <QStringList>
 #include <QTableWidget>
 #include <QHeaderView>
 #include <QMessageBox>
@@ -22,6 +23,9 @@
 #include <cmath>
 #include "solver.h"
 
+#define type_d high_precision_type
+
+using high_precision_type = boost::multiprecision::cpp_dec_float_50;
 
 class MainWindow : public QMainWindow
 {
@@ -34,28 +38,39 @@ public:
     QLineEdit *eps;
     QLineEdit *maxsteps;
     QLineEdit *w;
+    QLineEdit *eps2;
+    QLineEdit *maxsteps2;
+    QLineEdit *w2;
+    QLabel* summary;
     QSlider *slider;
     QLabel *valueLabel;
-    QLabel* label5;
     QSurface3DSeries *iterations[10];
+    QSurface3DSeries *iterations2[10];
     QSurface3DSeries *dataSeries = nullptr;
+    QSurface3DSeries *dataPSeries = nullptr;
     QSurface3DSeries *dataTrueSeries = nullptr;
     solver slv;
-    std::vector<std::vector<std::vector<double>>> v;
-    std::vector<std::vector<std::vector<double>>> z;
-    double a, b, c, d;
-    int selectedTask = 0;
+    solver slv2;
+    std::vector<std::vector<std::vector<type_d>>> v;
+    std::vector<std::vector<std::vector<type_d>>> v2;
+    std::vector<std::vector<std::vector<type_d>>> z;
+    type_d a, b, c, d;
+    int selectedTask = Functions::test;
+    int selectedMeth = 0;
     MainWindow(QWidget* parent = nullptr);
 
     ~MainWindow();
 
     bool activePlot{false};
-
+    bool lastPlotButton{false};
     void showGraph();
     void showTrueGraph();
+    void showPGraph();
     void removeGraph();
     void removeTrueGraph();
+    void removePGraph();
     void showTable();
+    void showSummary();
     void setT(int t);
     void onRadioButtonClicked();
 };
