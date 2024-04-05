@@ -77,8 +77,8 @@ public:
     int meth = Methods::zeidel;
     type_d x0, X, y0, Y, k, h, hor, ver, A, max_z, achieved_accuracy, max_r, epsilon, max_x, max_y;
     bool valid = 0;
-    type_d w = 1.5;
-    type_d w2 = 1.5;
+    type_d w = type_d(1.5);
+    type_d w2 = type_d(1.5);
     std::vector<int> iter;
     std::vector<type_d> right_side;
     std::vector<type_d> MAX_Z;
