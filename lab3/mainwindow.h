@@ -37,6 +37,7 @@ public:
     QLineEdit *eps;
     QLineEdit *maxsteps;
     QLineEdit *w;
+    QLineEdit *intervals;
     QLineEdit *eps2;
     QLineEdit *maxsteps2;
     QLineEdit *w2;
@@ -55,7 +56,7 @@ public:
     std::vector<std::vector<std::vector<type_d>>> z;
     type_d a, b, c, d;
     int selectedTask = Functions::test;
-    int selectedMeth = 0;
+    int selectedMeth = Methods::zeidel;
     MainWindow(QWidget* parent = nullptr);
 
     ~MainWindow();

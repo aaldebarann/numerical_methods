@@ -265,76 +265,130 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
     h = (X - x0) / N;
     valid = 1;
     epsilon = eps;
-
     max_it = m_it;
+
     it = 0;
-    hor = 1.0 / (h * h);
-    ver = 1.0 / (k * k);
-    A = - 2.0 * (1.0 / (h * h) + 1.0 / (k * k));
+    hor = (1) / (h * h);
+    ver = (1) / (k * k);
+    A = (- 2) * ((1) / (h * h) + (1) / (k * k));
+
     v.resize(10);
     z.resize(10);
+    iter.resize(2 + max_it / interval);
+    ACCURACY.resize(2 + max_it / interval);
+    MAX_R.resize(2 + max_it / interval);
+    MAX_Z.resize(2 + max_it / interval);
 
+    int iter_size = 1;
 
     for(int i = 0; i < 10; i++){
         prepare(v[i], z[i], a, c);
     }
     fill_right_side(v[9], a, c);
     type_d last_mz;
-    type_d last_accuracy = 0;
+    type_d last_accuracy = (0);
     int cur_photo = 1;
 
-    if(task == 0){
-        step_mvr(v[9], z[9], a, c, last_mz, last_accuracy);
-        copy(v[9], z[9], v[cur_photo], z[cur_photo]);
+    if (meth == Methods::zeidel){
+        step(v[9], z[9], a, c, last_mz, last_accuracy);
+        if(N < 100 && M < 100) copy(v[9], z[9], v[cur_photo], z[cur_photo]);
         cur_photo++;
 
-        step_mvr(v[9], z[9], a, c, last_mz, last_accuracy);
-        copy(v[9], z[9], v[cur_photo], z[cur_photo]);
+        iter[0] = (it);
+        ACCURACY[0] = last_accuracy;
+        calc_r(v[9]);
+        MAX_R[0] = max_r;
+        MAX_Z[0] = last_mz;
+
+        step(v[9], z[9], a, c, last_mz, last_accuracy);
+        if(N < 100 && M < 100) copy(v[9], z[9], v[cur_photo], z[cur_photo]);
         cur_photo++;
 
         type_d cur_accuracy = last_accuracy;
 
         for (size_t i = 2; i < max_it && cur_accuracy > eps; i++) {
-            step_mvr(v[9], z[9], a, c, last_mz, cur_accuracy);
-            if (cur_accuracy < (last_accuracy / 2.0) && cur_photo < 9) {
+            step(v[9], z[9], a, c, last_mz, cur_accuracy);
+            if (i % interval == 0){
+                iter[iter_size] = (it);
+                ACCURACY[iter_size] = (cur_accuracy);
+                calc_r(v[9]);
+                MAX_R[iter_size] = (max_r);
+                MAX_Z[iter_size] = (last_mz);
+                iter_size++;
+            }
+            if (cur_accuracy < (last_accuracy / 2) && cur_photo < 9 && N < 100 && M < 100) {
                 copy(v[9], z[9], v[cur_photo], z[cur_photo]);
                 last_accuracy = cur_accuracy;
                 cur_photo++;
             }
         }
 
-        for (; cur_photo < 9; cur_photo++) {
-            copy(v[9], z[9], v[cur_photo], z[cur_photo]);
+        if (N < 100 && M < 100) {
+            for (; cur_photo < 9; cur_photo++) {
+                copy(v[9], z[9], v[cur_photo], z[cur_photo]);
+            }
         }
         max_z = last_mz;
         achieved_accuracy = cur_accuracy;
         calc_r(v[9]);
-    } else if(task == 1){
+        iter[iter_size] = (it);
+        ACCURACY[iter_size] = (achieved_accuracy);
+        MAX_R[iter_size] = (max_r);
+        MAX_Z[iter_size] = (max_z);
+        iter.resize(iter_size);
+        ACCURACY.resize(iter_size);
+        MAX_R.resize(iter_size);
+        MAX_Z.resize(iter_size);
+    } else if (meth == Methods::mvr){
         step_mvr(v[9], z[9], a, c, last_mz, last_accuracy);
-        copy(v[9], z[9], v[cur_photo], z[cur_photo]);
+        if (N < 100 && M < 100) copy(v[9], z[9], v[cur_photo], z[cur_photo]);
         cur_photo++;
 
+        iter[0] = (it);
+        ACCURACY[0] = last_accuracy;
+        calc_r(v[9]);
+        MAX_R[0] = max_r;
+        MAX_Z[0] = last_mz;
+
         step_mvr(v[9], z[9], a, c, last_mz, last_accuracy);
-        copy(v[9], z[9], v[cur_photo], z[cur_photo]);
+        if (N < 100 && M < 100) copy(v[9], z[9], v[cur_photo], z[cur_photo]);
         cur_photo++;
 
         type_d cur_accuracy = last_accuracy;
 
         for (size_t i = 2; i < max_it && cur_accuracy > eps; i++) {
             step_mvr(v[9], z[9], a, c, last_mz, cur_accuracy);
-            if (cur_accuracy < (last_accuracy / 2.0) && cur_photo < 9) {
+            if(i % interval == 0){
+                iter[iter_size] = (it);
+                ACCURACY[iter_size] = (cur_accuracy);
+                calc_r(v[9]);
+                MAX_R[iter_size] = (max_r);
+                MAX_Z[iter_size] = (last_mz);
+                iter_size++;
+            }
+            if (cur_accuracy < (last_accuracy / 2) && cur_photo < 9 && N < 100 && M < 100) {
                 copy(v[9], z[9], v[cur_photo], z[cur_photo]);
                 last_accuracy = cur_accuracy;
                 cur_photo++;
             }
         }
 
-        for (; cur_photo < 9; cur_photo++) {
-            copy(v[9], z[9], v[cur_photo], z[cur_photo]);
+        if (N < 100 && M < 100) {
+            for (; cur_photo < 9; cur_photo++) {
+                copy(v[9], z[9], v[cur_photo], z[cur_photo]);
+            }
         }
         max_z = last_mz;
         achieved_accuracy = cur_accuracy;
         calc_r(v[9]);
+        iter[iter_size] = (it);
+        ACCURACY[iter_size] = (achieved_accuracy);
+        MAX_R[iter_size] = (max_r);
+        MAX_Z[iter_size] = (max_z);
+        iter.resize(iter_size);
+        ACCURACY.resize(iter_size);
+        MAX_R.resize(iter_size);
+        MAX_Z.resize(iter_size);
     }
 }
 
@@ -351,71 +405,112 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
     epsilon = eps;
     max_it = m_it;
     it = 0;
-    hor = 1.0 / (h * h);
-    ver = 1.0 / (k * k);
-    A = - 2.0 * (1.0 / (h * h) + 1.0 / (k * k));
+    hor = (1) / (h * h);
+    ver = (1) / (k * k);
+    A = (- 2) * ((1) / (h * h) + (1) / (k * k));
     v.resize(10);
+    iter.resize(2 + max_it / interval);
+    ACCURACY.resize(2 + max_it / interval);
+    MAX_R.resize(2 + max_it / interval);
+    int iter_size = 1;
 
     for(int i = 0; i < 10; i++){
         prepare(v[i], a, c);
     }
     fill_right_side(v[9], a, c);
-    type_d last_mz = 0;
-    type_d last_accuracy = 0;
+    type_d last_accuracy = type_d(0);
     int cur_photo = 1;
 
-    if(task == 0){
-        step_mvr(v[9], a, c, last_accuracy);
-        copy(v[9], v[cur_photo]);
+    if (meth == Methods::zeidel){
+        step(v[9], a, c, last_accuracy);
+        if (N < 100 && M < 100) copy(v[9], v[cur_photo]);
         cur_photo++;
 
-        step_mvr(v[9], a, c, last_accuracy);
-        copy(v[9], v[cur_photo]);
+        iter[0] = (it);
+        ACCURACY[0] = last_accuracy;
+        calc_r(v[9]);
+        MAX_R[0] = max_r;
+
+        step(v[9], a, c, last_accuracy);
+        if (N < 100 && M < 100) copy(v[9], v[cur_photo]);
         cur_photo++;
 
         type_d cur_accuracy = last_accuracy;
 
         for (size_t i = 2; i < max_it && cur_accuracy > eps; i++) {
-            step_mvr(v[9], a, c, cur_accuracy);
-            if (cur_accuracy < (last_accuracy / 2.0) && cur_photo < 9) {
+            step(v[9], a, c, cur_accuracy);
+            if(i % interval == 0){
+                iter[iter_size] = (it);
+                ACCURACY[iter_size] = (cur_accuracy);
+                calc_r(v[9]);
+                MAX_R[iter_size] = (max_r);
+                iter_size++;
+            }
+            if (cur_accuracy < (last_accuracy / 2) && cur_photo < 9 && N < 100 && M < 100) {
                 copy(v[9], v[cur_photo]);
                 last_accuracy = cur_accuracy;
                 cur_photo++;
             }
         }
 
-        for (; cur_photo < 9; cur_photo++) {
-            copy(v[9], v[cur_photo]);
+        if (N < 100 && M < 100) {
+            for (; cur_photo < 9; cur_photo++) {
+                copy(v[9], v[cur_photo]);
+            }
         }
-        max_z = last_mz;
         achieved_accuracy = cur_accuracy;
         calc_r(v[9]);
-    } else if(task == 1){
+        iter[iter_size] = (it);
+        ACCURACY[iter_size] = (cur_accuracy);
+        MAX_R[iter_size] = (max_r);
+        iter.resize(iter_size);
+        ACCURACY.resize(iter_size);
+        MAX_R.resize(iter_size);
+    } else if(meth == Methods::mvr){
         step_mvr(v[9], a, c, last_accuracy);
-        copy(v[9], v[cur_photo]);
+        if (N < 100 && M < 100) copy(v[9], v[cur_photo]);
         cur_photo++;
 
+        iter[0] = (it);
+        ACCURACY[0] = last_accuracy;
+        calc_r(v[9]);
+        MAX_R[0] = max_r;
+
         step_mvr(v[9], a, c, last_accuracy);
-        copy(v[9], v[cur_photo]);
+        if (N < 100 && M < 100) copy(v[9], v[cur_photo]);
         cur_photo++;
 
         type_d cur_accuracy = last_accuracy;
 
         for (size_t i = 2; i < max_it && cur_accuracy > eps; i++) {
             step_mvr(v[9], a, c, cur_accuracy);
-            if (cur_accuracy < (last_accuracy / 2.0) && cur_photo < 9) {
+            if(i % interval == 0){
+                iter[iter_size] = (it);
+                ACCURACY[iter_size] = (cur_accuracy);
+                calc_r(v[9]);
+                MAX_R[iter_size] = (max_r);
+                iter_size++;
+            }
+            if (cur_accuracy < (last_accuracy / 2) && cur_photo < 9 && N < 100 && M < 100) {
                 copy(v[9], v[cur_photo]);
                 last_accuracy = cur_accuracy;
                 cur_photo++;
             }
         }
 
-        for (; cur_photo < 9; cur_photo++) {
-            copy(v[9], v[cur_photo]);
+        if (N < 100 && M < 100) {
+            for (; cur_photo < 9; cur_photo++) {
+                copy(v[9], v[cur_photo]);
+            }
         }
-        max_z = last_mz;
         achieved_accuracy = cur_accuracy;
         calc_r(v[9]);
+        iter[iter_size] = (it);
+        ACCURACY[iter_size] = (cur_accuracy);
+        MAX_R[iter_size] = (max_r);
+        iter.resize(iter_size);
+        ACCURACY.resize(iter_size);
+        MAX_R.resize(iter_size);
     }
 }
 
