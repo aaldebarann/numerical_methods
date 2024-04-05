@@ -3,35 +3,35 @@
 using high_precision_type = boost::multiprecision::cpp_dec_float_50;
 
 type_d u_test::u(type_d x, type_d y) {
-    return exp(sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * x * y) * sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * x * y));
+    return exp(sin(boost::math::constants::pi<type_d>() * x * y) * sin(boost::math::constants::pi<type_d>() * x * y));
 }
 
 type_d u_test::u0y(type_d y) {
-    return 1;
+    return (1);
 }
 
 type_d u_test::u1y(type_d y) {
-    return exp(sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * y) * sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * y));
+    return exp(sin(boost::math::constants::pi<type_d>() * y) * sin(boost::math::constants::pi<type_d>() * y));
 }
 
 type_d u_test::ux0(type_d x) {
-    return 1;
+    return (1);
 }
 
 type_d u_test::ux1(type_d x) {
-    return exp(sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * x) * sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * x));
+    return exp(sin(boost::math::constants::pi<type_d>() * x) * sin(boost::math::constants::pi<type_d>() * x));
 }
 
 type_d u_test::f(type_d x, type_d y) {
-    return 0.5 * u(x, y) * boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * (x * x + y * y) * (- 1 - 4 * cos(2 * boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * x * y) + cos(4 * boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * x * y));
+    return u(x, y) * boost::math::constants::pi<type_d>() * boost::math::constants::pi<type_d>() * (x * x + y * y) * (- (1) - (4) * cos((2) * boost::math::constants::pi<type_d>() * x * y) + cos((4) * boost::math::constants::pi<type_d>() * x * y)) / 2;
 }
 
 type_d u_main::u0y(type_d y) {
-    return sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * y);
+    return sin(boost::math::constants::pi<type_d>() * y);
 }
 
 type_d u_main::u1y(type_d y) {
-    return sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * y);
+    return sin(boost::math::constants::pi<type_d>() * y);
 }
 
 type_d u_main::ux0(type_d x) {
@@ -43,18 +43,18 @@ type_d u_main::ux1(type_d x) {
 }
 
 type_d u_main::f(type_d x, type_d y) {
-    return sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * x * y) * sin(boost::math::constants::pi<boost::multiprecision::cpp_dec_float_50>() * x * y);
+    return sin(boost::math::constants::pi<type_d>() * x * y) * sin(boost::math::constants::pi<type_d>() * x * y);
 }
 
 solver::solver() {
-    k = 0;
-    h = 0;
+    k = type_d(0);
+    h = type_d(0);
     N = 0;
     M = 0;
-    x0 = 0;
-    X = 0;
-    y0 = 0;
-    Y = 0;
+    x0 = type_d(0);
+    X = type_d(0);
+    y0 = type_d(0);
+    Y = type_d(0);
     task = Functions::test;
 
     u0y = u_test::u0y;
@@ -66,14 +66,14 @@ solver::solver() {
 }
 
 solver::solver(int function) {
-    k = 0;
-    h = 0;
+    k = type_d(0);
+    h = type_d(0);
     N = 0;
     M = 0;
-    x0 = 0;
-    X = 0;
-    y0 = 0;
-    Y = 0;
+    x0 = type_d(0);
+    X = type_d(0);
+    y0 = type_d(0);
+    Y = type_d(0);
 
     if (function == Functions::test) {
         u0y = u_test::u0y;
@@ -148,8 +148,8 @@ void solver::step(std::vector<std::vector<type_d>>& v, std::vector<std::vector<t
     //zeidel
 
     it++;
-    type_d max_z = 0;
-    type_d accuracy = 0;
+    type_d max_z = type_d(0);
+    type_d accuracy = type_d(0);
     type_d last_v;
     for (int i = 1; i < N; i++)
         for (int j = 1; j < M; j++) {
@@ -194,8 +194,8 @@ void solver::step_mvr(std::vector<std::vector<type_d>>& v, std::vector<std::vect
     //mvr
 
     it++;
-    type_d max_z = 0;
-    type_d accuracy = 0;
+    type_d max_z = type_d(0);
+    type_d accuracy = type_d(0);
     type_d last_v;
     for (int i = 1; i < N; i++)
         for (int j = 1; j < M; j++) {
@@ -221,7 +221,7 @@ void solver::step_mvr(std::vector<std::vector<type_d>>& v, type_d a, type_d c, t
     //mvr
 
     it++;
-    type_d accuracy = 0;
+    type_d accuracy = type_d(0);
     type_d last_v;
     for (int i = 1; i < N; i++)
         for (int j = 1; j < M; j++) {
@@ -268,35 +268,54 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
 
     max_it = m_it;
     it = 0;
-    hor = 1.0 / (h * h);
-    ver = 1.0 / (k * k);
-    A = - 2.0 * (1.0 / (h * h) + 1.0 / (k * k));
+    hor = type_d(1) / (h * h);
+    ver = type_d(1) / (k * k);
+    A = type_d(- 2) * (type_d(1) / (h * h) + type_d(1) / (k * k));
     v.resize(10);
     z.resize(10);
+    iter.resize(2 + max_it / interval);
+    ACCURACY.resize(2 + max_it / interval);
+    MAX_R.resize(2 + max_it / interval);
+    MAX_Z.resize(2 + max_it / interval);
 
+    int iter_size = 1;
 
     for(int i = 0; i < 10; i++){
         prepare(v[i], z[i], a, c);
     }
     fill_right_side(v[9], a, c);
     type_d last_mz;
-    type_d last_accuracy = 0;
+    type_d last_accuracy = type_d(0);
     int cur_photo = 1;
 
-    if(task == 0){
-        step_mvr(v[9], z[9], a, c, last_mz, last_accuracy);
+    if (meth == Methods::zeidel){
+        step(v[9], z[9], a, c, last_mz, last_accuracy);
         copy(v[9], z[9], v[cur_photo], z[cur_photo]);
         cur_photo++;
 
-        step_mvr(v[9], z[9], a, c, last_mz, last_accuracy);
+        iter[0] = (it);
+        ACCURACY[0] = last_accuracy;
+        calc_r(v[9]);
+        MAX_R[0] = max_r;
+        MAX_Z[0] = last_mz;
+
+        step(v[9], z[9], a, c, last_mz, last_accuracy);
         copy(v[9], z[9], v[cur_photo], z[cur_photo]);
         cur_photo++;
 
         type_d cur_accuracy = last_accuracy;
 
         for (size_t i = 2; i < max_it && cur_accuracy > eps; i++) {
-            step_mvr(v[9], z[9], a, c, last_mz, cur_accuracy);
-            if (cur_accuracy < (last_accuracy / 2.0) && cur_photo < 9) {
+            step(v[9], z[9], a, c, last_mz, cur_accuracy);
+            if(i % interval == 0){
+                iter[iter_size] = (it);
+                ACCURACY[iter_size] = (cur_accuracy);
+                calc_r(v[9]);
+                MAX_R[iter_size] = (max_r);
+                MAX_Z[iter_size] = (last_mz);
+                iter_size++;
+            }
+            if (cur_accuracy < (last_accuracy / type_d(2)) && cur_photo < 9) {
                 copy(v[9], z[9], v[cur_photo], z[cur_photo]);
                 last_accuracy = cur_accuracy;
                 cur_photo++;
@@ -309,10 +328,24 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
         max_z = last_mz;
         achieved_accuracy = cur_accuracy;
         calc_r(v[9]);
-    } else if(task == 1){
+        iter[iter_size] = (it);
+        ACCURACY[iter_size] = (achieved_accuracy);
+        MAX_R[iter_size] = (max_r);
+        MAX_Z[iter_size] = (max_z);
+        iter.resize(iter_size);
+        ACCURACY.resize(iter_size);
+        MAX_R.resize(iter_size);
+        MAX_Z.resize(iter_size);
+    } else if (meth == Methods::mvr){
         step_mvr(v[9], z[9], a, c, last_mz, last_accuracy);
         copy(v[9], z[9], v[cur_photo], z[cur_photo]);
         cur_photo++;
+
+        iter[0] = (it);
+        ACCURACY[0] = last_accuracy;
+        calc_r(v[9]);
+        MAX_R[0] = max_r;
+        MAX_Z[0] = last_mz;
 
         step_mvr(v[9], z[9], a, c, last_mz, last_accuracy);
         copy(v[9], z[9], v[cur_photo], z[cur_photo]);
@@ -322,7 +355,15 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
 
         for (size_t i = 2; i < max_it && cur_accuracy > eps; i++) {
             step_mvr(v[9], z[9], a, c, last_mz, cur_accuracy);
-            if (cur_accuracy < (last_accuracy / 2.0) && cur_photo < 9) {
+            if(i % interval == 0){
+                iter[iter_size] = (it);
+                ACCURACY[iter_size] = (cur_accuracy);
+                calc_r(v[9]);
+                MAX_R[iter_size] = (max_r);
+                MAX_Z[iter_size] = (last_mz);
+                iter_size++;
+            }
+            if (cur_accuracy < (last_accuracy / type_d(2)) && cur_photo < 9) {
                 copy(v[9], z[9], v[cur_photo], z[cur_photo]);
                 last_accuracy = cur_accuracy;
                 cur_photo++;
@@ -335,6 +376,14 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
         max_z = last_mz;
         achieved_accuracy = cur_accuracy;
         calc_r(v[9]);
+        iter[iter_size] = (it);
+        ACCURACY[iter_size] = (achieved_accuracy);
+        MAX_R[iter_size] = (max_r);
+        MAX_Z[iter_size] = (max_z);
+        iter.resize(iter_size + 1);
+        ACCURACY.resize(iter_size + 1);
+        MAX_R.resize(iter_size + 1);
+        MAX_Z.resize(iter_size + 1);
     }
 }
 
@@ -351,33 +400,48 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
     epsilon = eps;
     max_it = m_it;
     it = 0;
-    hor = 1.0 / (h * h);
-    ver = 1.0 / (k * k);
-    A = - 2.0 * (1.0 / (h * h) + 1.0 / (k * k));
+    hor = type_d(1) / (h * h);
+    ver = type_d(1) / (k * k);
+    A = type_d(- 2) * (type_d(1) / (h * h) + type_d(1) / (k * k));
     v.resize(10);
+    iter.resize(2 + max_it / interval);
+    ACCURACY.resize(2 + max_it / interval);
+    MAX_R.resize(2 + max_it / interval);
+    int iter_size = 1;
 
     for(int i = 0; i < 10; i++){
         prepare(v[i], a, c);
     }
     fill_right_side(v[9], a, c);
-    type_d last_mz = 0;
-    type_d last_accuracy = 0;
+    type_d last_accuracy = type_d(0);
     int cur_photo = 1;
 
-    if(task == 0){
-        step_mvr(v[9], a, c, last_accuracy);
+    if (meth == Methods::zeidel){
+        step(v[9], a, c, last_accuracy);
         copy(v[9], v[cur_photo]);
         cur_photo++;
 
-        step_mvr(v[9], a, c, last_accuracy);
+        iter[0] = (1);
+        ACCURACY[0] = last_accuracy;
+        calc_r(v[9]);
+        MAX_R[0] = max_r;
+
+        step(v[9], a, c, last_accuracy);
         copy(v[9], v[cur_photo]);
         cur_photo++;
 
         type_d cur_accuracy = last_accuracy;
 
         for (size_t i = 2; i < max_it && cur_accuracy > eps; i++) {
-            step_mvr(v[9], a, c, cur_accuracy);
-            if (cur_accuracy < (last_accuracy / 2.0) && cur_photo < 9) {
+            step(v[9], a, c, cur_accuracy);
+            if(i % interval == 0){
+                iter[iter_size] = (i);
+                ACCURACY[iter_size] = (cur_accuracy);
+                calc_r(v[9]);
+                MAX_R[iter_size] = (max_r);
+                iter_size++;
+            }
+            if (cur_accuracy < (last_accuracy / type_d(2)) && cur_photo < 9) {
                 copy(v[9], v[cur_photo]);
                 last_accuracy = cur_accuracy;
                 cur_photo++;
@@ -387,13 +451,23 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
         for (; cur_photo < 9; cur_photo++) {
             copy(v[9], v[cur_photo]);
         }
-        max_z = last_mz;
         achieved_accuracy = cur_accuracy;
         calc_r(v[9]);
-    } else if(task == 1){
+        iter[iter_size] = (it);
+        ACCURACY[iter_size] = (cur_accuracy);
+        MAX_R[iter_size] = (max_r);
+        iter.resize(iter_size);
+        ACCURACY.resize(iter_size);
+        MAX_R.resize(iter_size);
+    } else if(meth == Methods::mvr){
         step_mvr(v[9], a, c, last_accuracy);
         copy(v[9], v[cur_photo]);
         cur_photo++;
+
+        iter[0] = (1);
+        ACCURACY[0] = last_accuracy;
+        calc_r(v[9]);
+        MAX_R[0] = max_r;
 
         step_mvr(v[9], a, c, last_accuracy);
         copy(v[9], v[cur_photo]);
@@ -403,7 +477,14 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
 
         for (size_t i = 2; i < max_it && cur_accuracy > eps; i++) {
             step_mvr(v[9], a, c, cur_accuracy);
-            if (cur_accuracy < (last_accuracy / 2.0) && cur_photo < 9) {
+            if(i % interval == 0){
+                iter[iter_size] = (i);
+                ACCURACY[iter_size] = (cur_accuracy);
+                calc_r(v[9]);
+                MAX_R[iter_size] = (max_r);
+                iter_size++;
+            }
+            if (cur_accuracy < (last_accuracy / type_d(2)) && cur_photo < 9) {
                 copy(v[9], v[cur_photo]);
                 last_accuracy = cur_accuracy;
                 cur_photo++;
@@ -413,9 +494,14 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
         for (; cur_photo < 9; cur_photo++) {
             copy(v[9], v[cur_photo]);
         }
-        max_z = last_mz;
         achieved_accuracy = cur_accuracy;
         calc_r(v[9]);
+        iter[iter_size] = (it);
+        ACCURACY[iter_size] = (cur_accuracy);
+        MAX_R[iter_size] = (max_r);
+        iter.resize(iter_size);
+        ACCURACY.resize(iter_size);
+        MAX_R.resize(iter_size);
     }
 }
 
@@ -438,7 +524,7 @@ void solver::fill_right_side(std::vector<std::vector<type_d>>& v, type_d a, type
 
 void solver::calc_r(std::vector<std::vector<type_d>>& v){
     int place = 0;
-    type_d r = 0;
+    type_d r = type_d(0);
     for (int j = 1; j < M; j++){
         for (int i = 1; i < N; i++){
             r += (A  * v[i][j] + (!(is_border(i - 1, j))) * hor * v[i - 1][j]

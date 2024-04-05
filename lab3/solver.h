@@ -39,6 +39,10 @@ enum Functions {
     test, tmain
 };
 
+enum Methods {
+    zeidel, mvr
+};
+
 class solver {
 
     type_d (*u0y)(type_d);
@@ -68,14 +72,18 @@ class solver {
     void copy(std::vector<std::vector<type_d>>& v1, std::vector<std::vector<type_d>>& v2);
 
 public:
-    int N, M, max_it, it, task, meth;
+    int N, M, max_it, it, task;
+    int interval = 1000;
+    int meth = Methods::zeidel;
     type_d x0, X, y0, Y, k, h, hor, ver, A, max_z, achieved_accuracy, max_r, epsilon, max_x, max_y;
     bool valid = 0;
     type_d w = 1.5;
     type_d w2 = 1.5;
-
+    std::vector<int> iter;
     std::vector<type_d> right_side;
-
+    std::vector<type_d> MAX_Z;
+    std::vector<type_d> MAX_R;
+    std::vector<type_d> ACCURACY;
     solver();
 
     solver(int function);

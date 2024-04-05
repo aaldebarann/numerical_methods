@@ -40,6 +40,9 @@ MainWindow::MainWindow(QWidget* parent)
     QLabel* label6 = new QLabel("Параметр ω:", controlsWidget);
     eps2 = new QLineEdit(this);
     eps2->setText("0.001");
+    QLabel* label5 = new QLabel("Интервал для таблицы:", controlsWidget);
+    intervals = new QLineEdit(this);
+    intervals->setText("1000");
     QLabel* label7 = new QLabel("Контроль точности ε2:", controlsWidget);
     maxsteps2 = new QLineEdit(this);
     maxsteps2->setText("10000");
@@ -109,6 +112,8 @@ MainWindow::MainWindow(QWidget* parent)
     controlLayout->addWidget(maxsteps);
     controlLayout->addWidget(label6);
     controlLayout->addWidget(w);
+    controlLayout->addWidget(label5);
+    controlLayout->addWidget(intervals);
     controlLayout->addWidget(label7);
     controlLayout->addWidget(eps2);
     controlLayout->addWidget(label8);
@@ -137,10 +142,10 @@ MainWindow::MainWindow(QWidget* parent)
     view->axisY()->setTitleVisible(true);
     view->axisZ()->setTitleVisible(true);
     slv = solver();
-    a = 0;
-    b = 1;
-    c = 0;
-    d = 1;
+    a = type_d(0);
+    b = type_d(1);
+    c = type_d(0);
+    d = type_d(1);
 };
 
 MainWindow::~MainWindow()
@@ -195,14 +200,17 @@ void MainWindow::showGraph() {
     int Yn = yn->text().toInt();
     int maxN = maxsteps->text().toInt();
     int maxN2 = maxsteps2->text().toInt();
+    int interval = intervals->text().toInt();
     type_d ww = type_d(w->text().toStdString());
     type_d epsilon = type_d(eps->text().toStdString());
     type_d ww2 = type_d(w2->text().toStdString());
     type_d epsilon2 = type_d(eps2->text().toStdString());
     lastPlotButton = false;
     if (selectedTask == Functions::test){
-        if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww) {
+        if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww || selectedMeth != slv.meth || slv.interval != interval) {
             slv.task = selectedTask;
+            slv.meth = selectedMeth;
+            slv.interval = interval;
             slv.w = ww;
             slv.solve(Xn, Yn, a, b, c, d, epsilon, maxN, v, z);
         }
@@ -257,9 +265,13 @@ void MainWindow::showGraph() {
         }
     }
     if (selectedTask == Functions::tmain){
-        if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww || epsilon2 != slv2.epsilon || slv2.w != ww2 || maxN2 != slv2.max_it) {
+        if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww || epsilon2 != slv2.epsilon || slv2.w != ww2 || maxN2 != slv2.max_it || slv.interval != interval) {
             slv.task = selectedTask;
             slv2.task = selectedTask;
+            slv.meth = selectedMeth;
+            slv2.meth = selectedMeth;
+            slv.interval = interval;
+            slv2.interval = interval;
             slv.w = ww;
             slv2.w = ww2;
             slv.solve(Xn, Yn, a, b, c, d, epsilon, maxN, v);
@@ -348,9 +360,9 @@ void MainWindow::removeTrueGraph(){
 void MainWindow::onRadioButtonClicked(){
     QRadioButton *selectedButton = qobject_cast<QRadioButton*>(sender());
     if (selectedButton->text() == "Зейдель") {
-        selectedMeth = 0;
+        selectedMeth = Methods::zeidel;;
     } else if (selectedButton->text() == "МВР") {
-        selectedMeth = 1;
+        selectedMeth = Methods::mvr;;
     } else if (selectedButton->text() == "Тестовая") {
         selectedTask = Functions::test;
         slv = solver(Functions::test);
@@ -432,15 +444,17 @@ void MainWindow::showSummary(){
     QIcon icon = QIcon("icon.ico");
     summaryBox->setWindowIcon(icon);
     summaryBox->setWindowTitle("Справка ☭");
-    summaryBox->setMinimumSize(490, 600);
-    summary = new QLabel("Справка:", summaryBox);
+    summaryBox->setMinimumSize(600, 600);
+    summary = new QLabel("Справка:", this);
     summary->setAlignment(Qt::AlignCenter);
     summary->setWordWrap(true);
     summary->setTextFormat(Qt::RichText);
+    QTableWidget *tableWidget4 = new QTableWidget(this);
+    tableWidget4->setColumnCount(slv.iter.size());
     if(selectedTask == Functions::test){
         summary->setText("<center>"
                          "<h3>"
-                         "<p> Для решения тестовой задачи использованы сетка с числом разбиений по x N = " + QString::number(slv.N) + "</p><p> и числом разбиений по y m = " + QString::number(slv.M) +
+                         "<p> Для решения тестовой задачи использованы сетка с числом разбиений по x N = " + QString::number(slv.N) + " и числом разбиений по y m = " + QString::number(slv.M) +
                          " метод верхней релаксации с параметром ω = " + QString::number(static_cast<double>(slv.w)) + ", применены критерии" +
                          " остановки по точности ε<sub>мет</sub> = " + QString::number(static_cast<double>(slv.epsilon)) + " и по числу итераций N<sub>max</sub> = " + QString::number(slv.max_it) +
                          "</p><p> На решение схемы (СЛАУ) затрачено итераций N = " + QString::number(slv.it) +
@@ -453,10 +467,19 @@ void MainWindow::showSummary(){
                          "</p><p> В качестве начального приближения использована линейная интерполяция по x" +
                          "</p></h3>"
                          "</center>");
+        QStringList headerlist2{"It", "Eps", "||R||", "||Z||"};
+        tableWidget4->setRowCount(4);
+        tableWidget4->setVerticalHeaderLabels(headerlist2);
+        for (int i = 0; i < slv.iter.size(); i++) {
+            tableWidget4->setItem(0, i, new QTableWidgetItem(QString::number(static_cast<double>(slv.iter[i]))));
+            tableWidget4->setItem(1, i, new QTableWidgetItem(QString::number(static_cast<double>(slv.ACCURACY[i]))));
+            tableWidget4->setItem(2, i, new QTableWidgetItem(QString::number(static_cast<double>(slv.MAX_R[i]))));
+            tableWidget4->setItem(3, i, new QTableWidgetItem(QString::number(static_cast<double>(slv.MAX_Z[i]))));
+        }
     } else if(selectedTask == Functions::tmain){
         summary->setText("<center>"
                          "<h3>"
-                         "<p> Для решения основной задачи использованы сетка с числом разбиений по x N = " + QString::number(slv.N) + "</p><p> и числом разбиений по y m = " + QString::number(slv.M) +
+                         "<p> Для решения основной задачи использованы сетка с числом разбиений по x N = " + QString::number(slv.N) + " и числом разбиений по y m = " + QString::number(slv.M) +
                          " метод верхней релаксации с параметром ω = " + QString::number(static_cast<double>(slv.w)) + ", применены критерии" +
                          " остановки по точности ε<sub>мет</sub> = " + QString::number(static_cast<double>(slv.epsilon)) + " и по числу итераций N<sub>max</sub> = " + QString::number(slv.max_it) +
                          "</p><p> На решение схемы (СЛАУ) затрачено итераций N = " + QString::number(slv.it) +
@@ -475,7 +498,24 @@ void MainWindow::showSummary(){
                          "</p><p> В качестве начального приближения на обоих сетках использована линейная интерполяция по x" +
                          "</p></h3>"
                          "</center>");
+        QStringList headerlist2{"It", "Eps", "||R||", "It2", "Eps2", "||R2||"};
+        tableWidget4->setRowCount(6);
+        tableWidget4->setVerticalHeaderLabels(headerlist2);
+        for (int i = 0; i < slv.iter.size(); i++) {
+            tableWidget4->setItem(0, i, new QTableWidgetItem(QString::number(static_cast<double>(slv.iter[i]))));
+            tableWidget4->setItem(1, i, new QTableWidgetItem(QString::number(static_cast<double>(slv.ACCURACY[i]))));
+            tableWidget4->setItem(2, i, new QTableWidgetItem(QString::number(static_cast<double>(slv.MAX_R[i]))));
+            tableWidget4->setItem(3, i, new QTableWidgetItem(QString::number(static_cast<double>(slv2.iter[i]))));
+            tableWidget4->setItem(4, i, new QTableWidgetItem(QString::number(static_cast<double>(slv2.ACCURACY[i]))));
+            tableWidget4->setItem(5, i, new QTableWidgetItem(QString::number(static_cast<double>(slv2.MAX_R[i]))));
+        }
     }
+    tableWidget4->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->addWidget(summary);
+    layout->addWidget(tableWidget4);
+    summaryBox->setLayout(layout);
+    summaryBox->setBaseSize(tableWidget4->size() + summary->size());
     summaryBox->show();
 }
 

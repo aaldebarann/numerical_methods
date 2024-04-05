@@ -41,6 +41,7 @@ public:
     QLineEdit *eps2;
     QLineEdit *maxsteps2;
     QLineEdit *w2;
+    QLineEdit *intervals;
     QLabel* summary;
     QSlider *slider;
     QLabel *valueLabel;
