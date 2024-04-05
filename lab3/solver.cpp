@@ -291,7 +291,7 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
 
     if (meth == Methods::zeidel){
         step(v[9], z[9], a, c, last_mz, last_accuracy);
-        if(N < 100 && M < 100) copy(v[9], z[9], v[cur_photo], z[cur_photo]);
+        if (N < 100 && M < 100) copy(v[9], z[9], v[cur_photo], z[cur_photo]);
         cur_photo++;
 
         iter[0] = (it);

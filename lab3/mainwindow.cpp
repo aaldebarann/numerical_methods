@@ -226,8 +226,9 @@ void MainWindow::showGraph() {
         }
         else return;
         if (view->hasSeries(dataSeries)) view->removeSeries(dataSeries);
-        if (Xn >= 1000 || Yn >= 1000) { skipx = Xn / 100; skipy = Yn / 100; Xn = 100; Yn = 100; }
+
         dataSeries = new QSurface3DSeries;
+        if (Xn >= 1000 || Yn >= 1000) { skipx = Xn / 100; skipy = Yn / 100; Xn = 100; Yn = 100; }
         if (Xn < 100 && Yn < 100) dataSeries->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
         else dataSeries->setDrawMode(QSurface3DSeries::DrawSurface);
         for (int j = 0; j <= Yn; j++) {
@@ -237,15 +238,6 @@ void MainWindow::showGraph() {
             }
             dataSeries->dataProxy()->addRow(row);
         }
-        dataSeries->setItemLabelFormat("solution @xLabel @yLabel @zLabel");
-        dataSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
-        dataSeries->setWireframeColor(QColor::fromString("#daa520"));
-        //dataSeries->setTextureFile("iceberg.jpg");
-        dataSeries->setBaseColor(QColor(0, 0, 255, 255));
-        view->addSeries(dataSeries);
-        view->axisX()->setRange(a, b);
-        view->axisZ()->setRange(c, d);
-        view->axisY()->setRange(-1, 1);
 
         if (Xn < 100 && Yn < 100) {
             slider->setEnabled(true);
@@ -308,15 +300,7 @@ void MainWindow::showGraph() {
             }
             dataSeries->dataProxy()->addRow(row);
         }
-        dataSeries->setItemLabelFormat("solution @xLabel @yLabel @zLabel");
-        dataSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
-        dataSeries->setWireframeColor(QColor::fromString("#daa520"));
-        //dataSeries->setTextureFile("iceberg.jpg");
-        dataSeries->setBaseColor(QColor(0, 0, 255, 255));
-        view->addSeries(dataSeries);
-        view->axisX()->setRange(a, b);
-        view->axisZ()->setRange(c, d);
-        view->axisY()->setRange(-1, 1);
+
         if (Xn < 100 && Yn < 100) {
             slider->setEnabled(true);
             for(size_t i = 0; i < 10; i++){
@@ -366,6 +350,15 @@ void MainWindow::showGraph() {
             }
         }
     }
+    dataSeries->setItemLabelFormat("Solution @xLabel @yLabel @zLabel");
+    dataSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
+    dataSeries->setWireframeColor(QColor::fromString("#daa520"));
+    //dataSeries->setTextureFile("iceberg.jpg");
+    dataSeries->setBaseColor(QColor(0, 0, 255, 255));
+    view->addSeries(dataSeries);
+    view->axisX()->setRange(a, b);
+    view->axisZ()->setRange(c, d);
+    view->axisY()->setRange(-1, 1);
     slider->setValue(10);
     valueLabel->setText("Снимок: 10");
 }
@@ -479,11 +472,12 @@ void MainWindow::showTable() {
 }
 
 void MainWindow::showSummary(){
+    if(!slv.valid) return;
     QDialog *summaryBox = new QDialog();
     QIcon icon = QIcon("icon.ico");
     summaryBox->setWindowIcon(icon);
     summaryBox->setWindowTitle("Справка ☭");
-    summaryBox->setMinimumSize(700, 600);
+    summaryBox->setMinimumSize(800, 800);
     summary = new QLabel("Справка:", this);
     summary->setAlignment(Qt::AlignCenter);
     summary->setWordWrap(true);
@@ -592,15 +586,6 @@ void MainWindow::showPGraph(){
             }
             dataPSeries->dataProxy()->addRow(row);
         }
-        dataPSeries->setItemLabelFormat("solution @xLabel @yLabel @zLabel");
-        dataPSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
-        dataPSeries->setWireframeColor(QColor::fromString("#daf520"));
-        //dataSeries->setTextureFile("iceberg.jpg");
-        dataPSeries->setBaseColor(QColor(0, 0, 255, 255));
-        view->addSeries(dataPSeries);
-        view->axisX()->setRange(a, b);
-        view->axisZ()->setRange(c, d);
-        view->axisY()->setRange(-1, 1);
     }
     if (selectedTask == Functions::tmain){
         if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww || epsilon2 != slv2.epsilon || slv2.w != ww2 || maxN2 != slv2.max_it) {
@@ -622,16 +607,16 @@ void MainWindow::showPGraph(){
             }
             dataPSeries->dataProxy()->addRow(row);
         }
-        dataPSeries->setItemLabelFormat("solution @xLabel @yLabel @zLabel");
-        dataPSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
-        //dataSeries->setTextureFile("iceberg.jpg");
-        dataPSeries->setBaseColor(QColor(0, 0, 255, 255));
-        dataPSeries->setWireframeColor(QColor::fromString("#daf520"));
-        view->addSeries(dataPSeries);
-        view->axisX()->setRange(a, b);
-        view->axisZ()->setRange(c, d);
-        view->axisY()->setRange(-1, 1);
     }
+    dataPSeries->setItemLabelFormat("error @xLabel @yLabel @zLabel");
+    dataPSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
+    //dataPSeries->setTextureFile("iceberg.jpg");
+    dataPSeries->setBaseColor(QColor(0, 0, 255, 255));
+    dataPSeries->setWireframeColor(QColor::fromString("#daf520"));
+    view->addSeries(dataPSeries);
+    view->axisX()->setRange(a, b);
+    view->axisZ()->setRange(c, d);
+    view->axisY()->setRange(-1, 1);
     slider->setValue(10);
     valueLabel->setText("Снимок: 10");
 }
