@@ -86,6 +86,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(taskVariant2, &QRadioButton::clicked, this, &MainWindow::onRadioButtonClicked);
     connect(methVariant1, &QRadioButton::clicked, this, &MainWindow::onRadioButtonClicked);
     connect(methVariant2, &QRadioButton::clicked, this, &MainWindow::onRadioButtonClicked);
+    connect(&slv, &solver::solveFinished, this, &MainWindow::handleSolveFinished);
 
     slider = new QSlider(Qt::Horizontal);
     slider->setMinimum(1);
@@ -141,7 +142,7 @@ MainWindow::MainWindow(QWidget* parent)
     view->axisX()->setTitleVisible(true);
     view->axisY()->setTitleVisible(true);
     view->axisZ()->setTitleVisible(true);
-    slv = solver();
+    slv.constructor();
     a = type_d(0);
     b = type_d(1);
     c = type_d(0);
@@ -178,7 +179,8 @@ void MainWindow::showTrueGraph(){
         }
         dataTrueSeries->setItemLabelFormat("True solution @xLabel @yLabel @zLabel");
     } else {
-        if (view->hasSeries(dataTrueSeries)) view->removeSeries(dataTrueSeries);
+        if (view->hasSeries(dataTrueSeries))
+            view->removeSeries(dataTrueSeries);
         dataTrueSeries = new QSurface3DSeries;
         if (Xn >= 1000 || Yn >= 1000) { skipx = Xn / 100; skipy = Yn / 100; Xn = 100; Yn = 100; }
         if (Xn < 100 && Yn < 100) dataTrueSeries->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
@@ -192,9 +194,6 @@ void MainWindow::showTrueGraph(){
         }
         dataTrueSeries->setItemLabelFormat("Solution 2N * 2M @xLabel @yLabel @zLabel");
     }
-    //dataTrueSeries->setBaseColor(QColor(255, 0, 0, 255));
-    //dataTrueSeries->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
-    //dataTrueSeries->setTextureFile("iceberg.jpg");
     dataTrueSeries->setWireframeColor(QColor::fromString("#ff00ff"));
     view->addSeries(dataTrueSeries);
     view->axisX()->setRange(static_cast<double>(a), static_cast<double>(b));
@@ -205,8 +204,6 @@ void MainWindow::showTrueGraph(){
 void MainWindow::showGraph() {
     int Xn = xn->text().toInt();
     int Yn = yn->text().toInt();
-    int skipx = 1;
-    int skipy = 1;
     int maxN = maxsteps->text().toInt();
     int maxN2 = maxsteps2->text().toInt();
     int interval = intervals->text().toInt();
@@ -221,13 +218,82 @@ void MainWindow::showGraph() {
             slv.meth = selectedMeth;
             slv.interval = interval;
             slv.w = ww;
-            slv.solve(Xn, Yn, a, b, c, d, epsilon, maxN, v, z);
+            prog = new ProgressWindow(&slv, this);
+            prog->show();
+            if (view->hasSeries(dataSeries))
+                removeGraph();
+            solveInBackground(Xn, Yn, a, b, c, d, epsilon, maxN, v, z);
         }
         else if (!view->hasSeries(dataSeries)) {
+            drawGraph();
         }
         else return;
-        if (view->hasSeries(dataSeries)) view->removeSeries(dataSeries);
+    }
+    if (selectedTask == Functions::tmain){
+        if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww || selectedMeth != slv.meth || slv.interval != interval || epsilon2 != slv2.epsilon || slv2.w != ww2 || maxN2 != slv2.max_it) {
+            slv.task = selectedTask;
+            slv2.task = selectedTask;
+            slv.meth = selectedMeth;
+            slv2.meth = selectedMeth;
+            slv.interval = interval;
+            slv2.interval = interval;
+            slv.w = ww;
+            slv2.w = ww2;
+            prog = new ProgressWindow(&slv, this);
+            prog->show();
+            if (view->hasSeries(dataSeries))
+                removeGraph();
+            solveInBackground(Xn, Yn, a, b, c, d, epsilon, maxN, v, epsilon2, maxN2, v2 );
+        }
+        else if (!view->hasSeries(dataSeries)) {
+            drawGraph();
+        }
+        else return;
+    }
+}
 
+void MainWindow::drawGraph(){
+    int Xn = slv.N;
+    int Yn = slv.M;
+    int skipx = 1;
+    int skipy = 1;
+    dataSeries = new QSurface3DSeries;
+    if (Xn >= 1000 || Yn >= 1000) {
+        skipx = Xn / 100;
+        skipy = Yn / 100;
+        Xn = 100;
+        Yn = 100;
+    }
+    if (Xn < 100 && Yn < 100)
+        dataSeries->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
+    else
+        dataSeries->setDrawMode(QSurface3DSeries::DrawSurface);
+    for (int j = 0; j <= Yn; j++) {
+        QSurfaceDataRow* row = new QSurfaceDataRow;
+        for (int i = 0; i <= Xn; i++) {
+            row->append(QSurfaceDataItem(QVector3D(static_cast<double>(a + slv.h * i * skipx), static_cast<double>(v[9][i * skipx][j * skipy]), static_cast<double>(c + slv.k * j * skipy))));
+        }
+        dataSeries->dataProxy()->addRow(row);
+    }
+    dataSeries->setItemLabelFormat("Solution @xLabel @yLabel @zLabel");
+    dataSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
+    dataSeries->setWireframeColor(QColor::fromString("#daa520"));
+    //dataSeries->setTextureFile("iceberg.jpg");
+    dataSeries->setBaseColor(QColor(0, 0, 255, 255));
+    view->addSeries(dataSeries);
+    view->axisX()->setRange(static_cast<double>(a), static_cast<double>(b));
+    view->axisZ()->setRange(static_cast<double>(c), static_cast<double>(d));
+    view->axisY()->setRange(-1, 1);
+    slider->setValue(10);
+    valueLabel->setText("Снимок: 10");
+}
+
+void MainWindow::handleSolveFinished(){
+    int Xn = slv.N;
+    int Yn = slv.M;
+    int skipx = 1;
+    int skipy = 1;
+    if (slv.task == Functions::test) {
         dataSeries = new QSurface3DSeries;
         if (Xn >= 1000 || Yn >= 1000) { skipx = Xn / 100; skipy = Yn / 100; Xn = 100; Yn = 100; }
         if (Xn < 100 && Yn < 100) dataSeries->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
@@ -239,7 +305,6 @@ void MainWindow::showGraph() {
             }
             dataSeries->dataProxy()->addRow(row);
         }
-
         if (Xn < 100 && Yn < 100) {
             slider->setEnabled(true);
             for(size_t i = 0; i < 10; i++){
@@ -271,108 +336,127 @@ void MainWindow::showGraph() {
                 }
             }
         }
-    }
-    if (selectedTask == Functions::tmain){
-        if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww || epsilon2 != slv2.epsilon || slv2.w != ww2 || maxN2 != slv2.max_it || slv.interval != interval) {
-            slv.task = selectedTask;
-            slv2.task = selectedTask;
-            slv.meth = selectedMeth;
-            slv2.meth = selectedMeth;
-            slv.interval = interval;
-            slv2.interval = interval;
-            slv.w = ww;
-            slv2.w = ww2;
-            slv.solve(Xn, Yn, a, b, c, d, epsilon, maxN, v);
-            slv2.solve(2 * Xn, 2 * Yn, a, b, c, d, epsilon2, maxN2, v2);
-        }
-        else if (!view->hasSeries(dataSeries)) {
-        }
-        else return;
-        if (view->hasSeries(dataSeries)) view->removeSeries(dataSeries);
-
-        dataSeries = new QSurface3DSeries;
+        dataSeries->setItemLabelFormat("Solution @xLabel @yLabel @zLabel");
+        dataSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
+        dataSeries->setWireframeColor(QColor::fromString("#daa520"));
+        //dataSeries->setTextureFile("iceberg.jpg");
+        view->addSeries(dataSeries);
+        view->axisX()->setRange(static_cast<double>(a), static_cast<double>(b));
+        view->axisZ()->setRange(static_cast<double>(c), static_cast<double>(d));
+        view->axisY()->setRange(-1, 1);
+        slider->setValue(10);
+        valueLabel->setText("Снимок: 10");
+        prog->closeWindow();
+        emit solverFinished2();
+    } else if (slv.task == Functions::tmain) {
         if (Xn >= 1000 || Yn >= 1000) { skipx = Xn / 100; skipy = Yn / 100; Xn = 100; Yn = 100; }
-        if (Xn < 100 && Yn < 100) dataSeries->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
-        else dataSeries->setDrawMode(QSurface3DSeries::DrawSurface);
-        for (int j = 0; j <= Yn; j++) {
-            QSurfaceDataRow* row = new QSurfaceDataRow;
-            for (int i = 0; i <= Xn; i++) {
-                row->append(QSurfaceDataItem(QVector3D(static_cast<double>(a + slv.h * i * skipx), static_cast<double>(v[9][i * skipx][j * skipy]), static_cast<double>(c + slv.k * j * skipy))));
-            }
-            dataSeries->dataProxy()->addRow(row);
-        }
-
-        if (Xn < 100 && Yn < 100) {
-            slider->setEnabled(true);
-            for(size_t i = 0; i < 10; i++){
-                iterations[i] = new QSurface3DSeries;
-                iterations2[i] = new QSurface3DSeries;
-            }
-            for(size_t t = 0; t < 10; t++){
-                for (int j = 0; j <= slv.M; j++) {
-                    QSurfaceDataRow* row = new QSurfaceDataRow;
-                    for (int i = 0; i <= slv.N; i++) {
-                        row->append(QSurfaceDataItem(QVector3D(static_cast<double>(a + slv.h * i), static_cast<double>(v[t][i][j]), static_cast<double>(c + slv.k * j))));
-                    }
-                    iterations[t]->dataProxy()->addRow(row);
+        if (!help) {
+            dataSeries = new QSurface3DSeries;
+            if (Xn < 100 && Yn < 100)
+                dataSeries->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
+            else
+                dataSeries->setDrawMode(QSurface3DSeries::DrawSurface);
+            for (int j = 0; j <= Yn; j++) {
+                QSurfaceDataRow* row = new QSurfaceDataRow;
+                for (int i = 0; i <= Xn; i++) {
+                    row->append(QSurfaceDataItem(QVector3D(static_cast<double>(a + slv.h * i * skipx), static_cast<double>(v[9][i * skipx][j * skipy]), static_cast<double>(c + slv.k * j * skipy))));
                 }
-                iterations[t]->setItemLabelFormat(QStringLiteral("(@xLabel @yLabel @zLabel)"));
-                iterations[t]->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
-                iterations[t]->setFlatShadingEnabled(false);
-                iterations[t]->setItemLabelFormat("Solution @xLabel @yLabel @zLabel");
-                iterations[t]->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
-                iterations[t]->setWireframeColor(QColor::fromString("#daa520"));
+                dataSeries->dataProxy()->addRow(row);
             }
-            for(size_t t = 0; t < 10; t++){
-                for (int j = 0; j <= slv2.M; j++) {
-                    QSurfaceDataRow* row = new QSurfaceDataRow;
-                    for (int i = 0; i <= slv2.N; i++) {
-                        row->append(QSurfaceDataItem(QVector3D(static_cast<double>(a + slv2.h * i), static_cast<double>(v2[t][i][j]), static_cast<double>(c + slv2.k * j))));
-                    }
-                    iterations2[t]->dataProxy()->addRow(row);
+            dataSeries->setItemLabelFormat("Solution @xLabel @yLabel @zLabel");
+            dataSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
+            dataSeries->setWireframeColor(QColor::fromString("#daa520"));
+            //dataSeries->setTextureFile("iceberg.jpg");
+            view->addSeries(dataSeries);
+            view->axisX()->setRange(static_cast<double>(a), static_cast<double>(b));
+            view->axisZ()->setRange(static_cast<double>(c), static_cast<double>(d));
+            view->axisY()->setRange(-1, 1);
+            slider->setValue(10);
+            valueLabel->setText("Снимок: 10");
+            prog->closeWindow();
+            if (Xn < 100 && Yn < 100) {
+                slider->setEnabled(true);
+                for(size_t i = 0; i < 10; i++){
+                    iterations[i] = new QSurface3DSeries;
                 }
-                iterations2[t]->setItemLabelFormat(QStringLiteral("(@xLabel @yLabel @zLabel)"));
-                iterations2[t]->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
-                iterations2[t]->setFlatShadingEnabled(false);
-                iterations2[t]->setItemLabelFormat("Solution 2 @xLabel @yLabel @zLabel");
-                iterations2[t]->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
-                iterations2[t]->setWireframeColor(QColor::fromString("#ff00ff"));
-            }
+                for(size_t t = 0; t < 10; t++){
+                    for (int j = 0; j <= slv.M; j++) {
+                        QSurfaceDataRow* row = new QSurfaceDataRow;
+                        for (int i = 0; i <= slv.N; i++) {
+                            row->append(QSurfaceDataItem(QVector3D(static_cast<double>(a + slv.h * i), static_cast<double>(v[t][i][j]), static_cast<double>(c + slv.k * j))));
+                        }
+                        iterations[t]->dataProxy()->addRow(row);
+                    }
+                    iterations[t]->setItemLabelFormat(QStringLiteral("(@xLabel @yLabel @zLabel)"));
+                    iterations[t]->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
+                    iterations[t]->setFlatShadingEnabled(false);
+                    iterations[t]->setItemLabelFormat("Solution @xLabel @yLabel @zLabel");
+                    iterations[t]->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
+                    iterations[t]->setWireframeColor(QColor::fromString("#daa520"));
+                }
+            } else
+                slider->setDisabled(true);
         } else {
-            slider->setDisabled(true);
-        }
-        for (int j = 0; j <= slv.M; j++) {
-            for (int i = 0; i <= slv.N; i++) {
-                if(abs(v[9][i][j] - v2[9][2 * i][2 * j]) > slv.max_z){
-                    slv.max_z = abs(v[9][i][j] - v2[9][2 * i][2 * j]);
-                    slv.max_x = static_cast<double>(a + slv.h * i);
-                    slv.max_y = static_cast<double>(c + slv.k * j);
+            if (Xn < 100 && Yn < 100) {
+                slider->setEnabled(true);
+                for(size_t i = 0; i < 10; i++){
+                    iterations2[i] = new QSurface3DSeries;
+                }
+                for(size_t t = 0; t < 10; t++){
+                    for (int j = 0; j <= slv2.M; j++) {
+                        QSurfaceDataRow* row = new QSurfaceDataRow;
+                        for (int i = 0; i <= slv2.N; i++) {
+                            row->append(QSurfaceDataItem(QVector3D(static_cast<double>(a + slv2.h * i), static_cast<double>(v2[t][i][j]), static_cast<double>(c + slv2.k * j))));
+                        }
+                        iterations2[t]->dataProxy()->addRow(row);
+                    }
+                    iterations2[t]->setItemLabelFormat(QStringLiteral("(@xLabel @yLabel @zLabel)"));
+                    iterations2[t]->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
+                    iterations2[t]->setFlatShadingEnabled(false);
+                    iterations2[t]->setItemLabelFormat("Solution 2 @xLabel @yLabel @zLabel");
+                    iterations2[t]->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
+                    iterations2[t]->setWireframeColor(QColor::fromString("#ff00ff"));
+                }
+            } else
+                slider->setDisabled(true);
+            for (int j = 0; j <= slv.M; j++) {
+                for (int i = 0; i <= slv.N; i++) {
+                    if(abs(v[9][i][j] - v2[9][2 * i][2 * j]) > slv.max_z){
+                        slv.max_z = abs(v[9][i][j] - v2[9][2 * i][2 * j]);
+                        slv.max_x = static_cast<double>(a + slv.h * i);
+                        slv.max_y = static_cast<double>(c + slv.k * j);
+                    }
                 }
             }
         }
+        if (help) {
+            emit solverFinished3();
+            prog->closeWindow();
+        } else {
+            prog->closeWindow();
+            prog = new ProgressWindow(&slv2, this);
+            prog->show();
+        }
+        help = !help;
     }
-    dataSeries->setItemLabelFormat("solution @xLabel @yLabel @zLabel");
-    dataSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
-    dataSeries->setWireframeColor(QColor::fromString("#daa520"));
-    //dataSeries->setTextureFile("iceberg.jpg");
-    dataSeries->setBaseColor(QColor(0, 0, 255, 255));
-    view->addSeries(dataSeries);
-    view->axisX()->setRange(static_cast<double>(a), static_cast<double>(b));
-    view->axisZ()->setRange(static_cast<double>(c), static_cast<double>(d));
-    view->axisY()->setRange(-1, 1);
-    slider->setValue(10);
-    valueLabel->setText("Снимок: 10");
 }
 
 void MainWindow::removeGraph(){
     if (view->hasSeries(dataSeries)) view->removeSeries(dataSeries);
     for (auto it : view->seriesList()) {
-        if (it != dataTrueSeries) view->removeSeries(it);
+        if (it == dataTrueSeries || it == dataPSeries)
+            continue;
+        else
+            view->removeSeries(it);
     }
 }
 
 void MainWindow::removeTrueGraph(){
     if (view->hasSeries(dataTrueSeries)) view->removeSeries(dataTrueSeries);
+}
+
+void MainWindow::removePGraph(){
+    if (view->hasSeries(dataPSeries)) view->removeSeries(dataPSeries);
 }
 
 void MainWindow::onRadioButtonClicked(){
@@ -383,11 +467,11 @@ void MainWindow::onRadioButtonClicked(){
         selectedMeth = Methods::mvr;
     } else if (selectedButton->text() == "Тестовая") {
         selectedTask = Functions::test;
-        slv = solver(Functions::test);
+        slv.constructor(Functions::test);
     } else if (selectedButton->text() == "Основная") {
         selectedTask = Functions::tmain;
-        slv = solver(Functions::tmain);
-        slv2 = solver(Functions::tmain);
+        slv.constructor(Functions::tmain);
+        slv2.constructor(Functions::tmain);
     }
 }
 
@@ -396,7 +480,7 @@ void MainWindow::setT(int t){
     for (auto it : view->seriesList()) {
         if (it != dataTrueSeries) view->removeSeries(it);
     }
-    if (!lastPlotButton) {view->addSeries(iterations[t]);}
+    if (!lastPlotButton || !slv.task) {view->addSeries(iterations[t]);}
     else {view->addSeries(iterations2[t]);}
 }
 
@@ -498,6 +582,7 @@ void MainWindow::showSummary(){
                          "</p><p> Задача решена с погрешностью ε<sub>1</sub> = " + QString::number(static_cast<double>(slv.max_z)) +
                          "</p><p> Максимальное отклонение точного и численного решений наблюдается в узле x = " + QString::number(static_cast<double>(slv.max_x)) + ", y = " + QString::number(static_cast<double>(slv.max_y)) +
                          "</p><p> В качестве начального приближения использована линейная интерполяция по x" +
+                         "</p><p> Время выполнения задачи: " + QString::number(slv.duration) + ", среднее время итерации: " + QString::number(slv.duration / slv.it) +
                          "</p></h3>"
                          "</center>");
         QStringList headerlist2{"It", "Eps", "||R||", "||Z||"};
@@ -568,13 +653,12 @@ void MainWindow::showPGraph(){
     type_d ww2 = type_d(w2->text().toStdString());
     type_d epsilon2 = type_d(eps2->text().toStdString());
     if (selectedTask == Functions::test){
-        if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww) {
+        if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww || selectedMeth != slv.meth) {
             return;
         }
         else if (!view->hasSeries(dataPSeries)) {
         }
         else return;
-        if (view->hasSeries(dataPSeries)) view->removeSeries(dataPSeries);
 
         dataPSeries = new QSurface3DSeries;
         if (Xn >= 1000 || Yn >= 1000) { skipx = Xn / 100; skipy = Yn / 100; Xn = 100; Yn = 100; }
@@ -590,21 +674,18 @@ void MainWindow::showPGraph(){
         dataPSeries->setItemLabelFormat("solution @xLabel @yLabel @zLabel");
         dataPSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
         dataPSeries->setWireframeColor(QColor::fromString("#daf520"));
-        //dataSeries->setTextureFile("iceberg.jpg");
-        dataPSeries->setBaseColor(QColor(0, 0, 255, 255));
         view->addSeries(dataPSeries);
         view->axisX()->setRange(static_cast<double>(a), static_cast<double>(b));
         view->axisZ()->setRange(static_cast<double>(c), static_cast<double>(d));
         view->axisY()->setRange(-1, 1);
     }
     if (selectedTask == Functions::tmain){
-        if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww || epsilon2 != slv2.epsilon || slv2.w != ww2 || maxN2 != slv2.max_it) {
+        if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww || selectedMeth != slv.meth || epsilon2 != slv2.epsilon || slv2.w != ww2 || maxN2 != slv2.max_it) {
             return;
         }
         else if (!view->hasSeries(dataPSeries)) {
         }
         else return;
-        if (view->hasSeries(dataPSeries)) view->removeSeries(dataPSeries);
 
         dataPSeries = new QSurface3DSeries;
         if (Xn >= 1000 || Yn >= 1000) { skipx = Xn / 100; skipy = Yn / 100; Xn = 100; Yn = 100; }
@@ -619,18 +700,40 @@ void MainWindow::showPGraph(){
         }
         dataPSeries->setItemLabelFormat("solution @xLabel @yLabel @zLabel");
         dataPSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
-        //dataSeries->setTextureFile("iceberg.jpg");
-        dataPSeries->setBaseColor(QColor(0, 0, 255, 255));
         dataPSeries->setWireframeColor(QColor::fromString("#daf520"));
         view->addSeries(dataPSeries);
         view->axisX()->setRange(static_cast<double>(a), static_cast<double>(b));
         view->axisZ()->setRange(static_cast<double>(c), static_cast<double>(d));
         view->axisY()->setRange(-1, 1);
     }
-    slider->setValue(10);
-    valueLabel->setText("Снимок: 10");
 }
 
-void MainWindow::removePGraph(){
-    if (view->hasSeries(dataPSeries)) view->removeSeries(dataPSeries);
+void MainWindow::solveInBackground(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it, std::vector<std::vector<std::vector<type_d>>>& v, std::vector<std::vector<std::vector<type_d>>>& z) {
+    QThread* thread = new QThread();
+    slv.moveToThread(thread);
+    connect(thread, &QThread::started, &slv, [this, n, m, a, b, c, d, eps, m_it, &v, &z]() {
+        slv.solve(n, m, a, b, c, d, eps, m_it, v, z);
+        slv.moveToThread(this->thread());
+    });
+    connect(&slv, &solver::solveFinished, this, &MainWindow::handleSolveFinished);
+    connect(this, &MainWindow::solverFinished2, thread, &QThread::quit);
+    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+    thread->start();
+}
+
+void MainWindow::solveInBackground(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it, std::vector<std::vector<std::vector<type_d>>>& v, type_d eps2, int m_it2, std::vector<std::vector<std::vector<type_d>>>& v2) {
+    QThread* thread = new QThread();
+    slv.moveToThread(thread);
+    slv2.moveToThread(thread);
+    connect(&slv, &solver::solveFinished, this, &MainWindow::handleSolveFinished);
+    connect(thread, &QThread::started, &slv, [this, n, m, a, b, c, d, eps, m_it, &v,  eps2, m_it2, &v2]() {
+        slv.solve(n, m, a, b, c, d, eps, m_it, v);
+        slv.moveToThread(this->thread());
+        slv2.solve(2 * n, 2 * m, a, b, c, d, eps2, m_it2, v2);
+        slv2.moveToThread(this->thread());
+    });
+    connect(&slv2, &solver::solveFinished, this, &MainWindow::handleSolveFinished);
+    connect(this, &MainWindow::solverFinished3, thread, &QThread::quit);
+    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+    thread->start();
 }
