@@ -7,7 +7,7 @@ type_d u_test::u(type_d x, type_d y) {
 }
 
 type_d u_test::u0y(type_d y) {
-    return (1);
+    return type_d(1);
 }
 
 type_d u_test::u1y(type_d y) {
@@ -15,7 +15,7 @@ type_d u_test::u1y(type_d y) {
 }
 
 type_d u_test::ux0(type_d x) {
-    return (1);
+    return type_d(1);
 }
 
 type_d u_test::ux1(type_d x) {
@@ -23,7 +23,7 @@ type_d u_test::ux1(type_d x) {
 }
 
 type_d u_test::f(type_d x, type_d y) {
-    return u(x, y) * boost::math::constants::pi<type_d>() * boost::math::constants::pi<type_d>() * (x * x + y * y) * (- (1) - (4) * cos((2) * boost::math::constants::pi<type_d>() * x * y) + cos((4) * boost::math::constants::pi<type_d>() * x * y)) / 2;
+    return u(x, y) * boost::math::constants::pi<type_d>() * boost::math::constants::pi<type_d>() * (x * x + y * y) * (- type_d(1) - type_d(4) * cos(type_d(2) * boost::math::constants::pi<type_d>() * x * y) + cos(type_d(4) * boost::math::constants::pi<type_d>() * x * y)) / type_d(2);
 }
 
 type_d u_main::u0y(type_d y) {
@@ -46,7 +46,7 @@ type_d u_main::f(type_d x, type_d y) {
     return sin(boost::math::constants::pi<type_d>() * x * y) * sin(boost::math::constants::pi<type_d>() * x * y);
 }
 
-solver::solver() {
+void solver::constructor() {
     k = type_d(0);
     h = type_d(0);
     N = 0;
@@ -65,7 +65,7 @@ solver::solver() {
     f = u_test::f;
 }
 
-solver::solver(int function) {
+void solver::constructor(int function) {
     k = type_d(0);
     h = type_d(0);
     N = 0;
@@ -165,7 +165,6 @@ void solver::step(std::vector<std::vector<type_d>>& v, std::vector<std::vector<t
             if (z[i][j] > max_z)
                 max_z = z[i][j];
         }
-
     mz = max_z;
     acc = accuracy;
 }
@@ -231,7 +230,7 @@ void solver::step_mvr(std::vector<std::vector<type_d>>& v, type_d a, type_d c, t
                        - w * hor * v[i + 1][j]
                        - w * ver * v[i][j - 1]
                        - w * ver * v[i][j + 1]
-                       +(1 - w) * A * last_v) / A;
+                       + (1 - w) * A * last_v) / A;
             if (abs(last_v - v[i][j]) > accuracy)
                 accuracy = abs(last_v - v[i][j]);
         }
@@ -254,7 +253,8 @@ void solver::copy(std::vector<std::vector<type_d>>& v1,std::vector<std::vector<t
         }
 }
 
-void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it, std::vector<std::vector<std::vector<type_d>>>& v, std::vector<std::vector<std::vector<type_d>>>& z) {
+Q_INVOKABLE void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it, std::vector<std::vector<std::vector<type_d>>>& v, std::vector<std::vector<std::vector<type_d>>>& z) {
+    timer.start();
     N = n;
     M = m;
     x0 = a;
@@ -280,17 +280,24 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
 
     int iter_size = 1;
 
-    for(int i = 0; i < 10; i++){
-        prepare(v[i], z[i], a, c);
+    if (N < 100 && M < 100) {
+        for(int i = 0; i < 10; i++) {
+            prepare(v[i], z[i], a, c);
+        }
+    } else {
+        prepare(v[9], z[9], a, c);
     }
     fill_right_side(v[9], a, c);
     type_d last_mz;
     type_d last_accuracy = type_d(0);
     int cur_photo = 1;
 
+    emit progressUpdate(0, 66, timer.elapsed(), 1);
     if (meth == Methods::zeidel){
+        timer.start();
         step(v[9], z[9], a, c, last_mz, last_accuracy);
-        copy(v[9], z[9], v[cur_photo], z[cur_photo]);
+        emit progressUpdate((0 * 100) / max_it, last_accuracy, timer.elapsed(), it);
+        if (N < 100 && M < 100) copy(v[9], z[9], v[cur_photo], z[cur_photo]);
         cur_photo++;
 
         iter[0] = (it);
@@ -300,7 +307,8 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
         MAX_Z[0] = last_mz;
 
         step(v[9], z[9], a, c, last_mz, last_accuracy);
-        copy(v[9], z[9], v[cur_photo], z[cur_photo]);
+        emit progressUpdate((1 * 100) / max_it, last_accuracy, timer.elapsed(), it);
+        if (N < 100 && M < 100) copy(v[9], z[9], v[cur_photo], z[cur_photo]);
         cur_photo++;
 
         type_d cur_accuracy = last_accuracy;
@@ -315,15 +323,19 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
                 MAX_Z[iter_size] = (last_mz);
                 iter_size++;
             }
-            if (cur_accuracy < (last_accuracy / type_d(2)) && cur_photo < 9) {
+            if (cur_accuracy < (last_accuracy / type_d(2)) && cur_photo < 9 && N < 100 && M < 100) {
                 copy(v[9], z[9], v[cur_photo], z[cur_photo]);
                 last_accuracy = cur_accuracy;
                 cur_photo++;
             }
+            emit progressUpdate((i * 100) / max_it, cur_accuracy, timer.elapsed(), it);
         }
+        emit progressUpdate(100, cur_accuracy, timer.elapsed(), it);
 
-        for (; cur_photo < 9; cur_photo++) {
-            copy(v[9], z[9], v[cur_photo], z[cur_photo]);
+        if (N < 100 && M < 100) {
+            for (; cur_photo < 9; cur_photo++) {
+                copy(v[9], z[9], v[cur_photo], z[cur_photo]);
+            }
         }
         max_z = last_mz;
         achieved_accuracy = cur_accuracy;
@@ -337,8 +349,10 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
         MAX_R.resize(iter_size);
         MAX_Z.resize(iter_size);
     } else if (meth == Methods::mvr){
+        timer.start();
         step_mvr(v[9], z[9], a, c, last_mz, last_accuracy);
-        copy(v[9], z[9], v[cur_photo], z[cur_photo]);
+        emit progressUpdate((0 * 100) / max_it, last_accuracy, timer.elapsed(), it);
+        if (N < 100 && M < 100) copy(v[9], z[9], v[cur_photo], z[cur_photo]);
         cur_photo++;
 
         iter[0] = (it);
@@ -348,7 +362,8 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
         MAX_Z[0] = last_mz;
 
         step_mvr(v[9], z[9], a, c, last_mz, last_accuracy);
-        copy(v[9], z[9], v[cur_photo], z[cur_photo]);
+        emit progressUpdate((1 * 100) / max_it, last_accuracy, timer.elapsed(), it);
+        if (N < 100 && M < 100) copy(v[9], z[9], v[cur_photo], z[cur_photo]);
         cur_photo++;
 
         type_d cur_accuracy = last_accuracy;
@@ -363,15 +378,19 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
                 MAX_Z[iter_size] = (last_mz);
                 iter_size++;
             }
-            if (cur_accuracy < (last_accuracy / type_d(2)) && cur_photo < 9) {
+            if (cur_accuracy < (last_accuracy / type_d(2)) && cur_photo < 9 && N < 100 && M < 100) {
                 copy(v[9], z[9], v[cur_photo], z[cur_photo]);
                 last_accuracy = cur_accuracy;
                 cur_photo++;
             }
+            emit progressUpdate((i * 100) / max_it, cur_accuracy, timer.elapsed(), it);
         }
+        emit progressUpdate(100, cur_accuracy, timer.elapsed(), it);
 
-        for (; cur_photo < 9; cur_photo++) {
-            copy(v[9], z[9], v[cur_photo], z[cur_photo]);
+        if (N < 100 && M < 100) {
+            for (; cur_photo < 9; cur_photo++) {
+                copy(v[9], z[9], v[cur_photo], z[cur_photo]);
+            }
         }
         max_z = last_mz;
         achieved_accuracy = cur_accuracy;
@@ -380,14 +399,17 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
         ACCURACY[iter_size] = (achieved_accuracy);
         MAX_R[iter_size] = (max_r);
         MAX_Z[iter_size] = (max_z);
-        iter.resize(iter_size + 1);
-        ACCURACY.resize(iter_size + 1);
-        MAX_R.resize(iter_size + 1);
-        MAX_Z.resize(iter_size + 1);
+        iter.resize(iter_size);
+        ACCURACY.resize(iter_size);
+        MAX_R.resize(iter_size);
+        MAX_Z.resize(iter_size);
     }
+    duration = timer.elapsed();
+    emit solveFinished();
 }
 
-void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it, std::vector<std::vector<std::vector<type_d>>>& v) {
+Q_INVOKABLE void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it, std::vector<std::vector<std::vector<type_d>>>& v) {
+    timer.start();
     N = n;
     M = m;
     x0 = a;
@@ -409,25 +431,33 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
     MAX_R.resize(2 + max_it / interval);
     int iter_size = 1;
 
-    for(int i = 0; i < 10; i++){
-        prepare(v[i], a, c);
+    if (N < 100 && M < 100) {
+        for(int i = 0; i < 10; i++){
+            prepare(v[i], a, c);
+        }
+    } else {
+        prepare(v[9], a, c);
     }
     fill_right_side(v[9], a, c);
     type_d last_accuracy = type_d(0);
     int cur_photo = 1;
 
+    emit progressUpdate(0, 66, timer.elapsed(), 1);
     if (meth == Methods::zeidel){
+        timer.start();
         step(v[9], a, c, last_accuracy);
-        copy(v[9], v[cur_photo]);
+        emit progressUpdate((0 * 100) / max_it, last_accuracy, timer.elapsed(), it);
+        if (N < 100 && M < 100) copy(v[9], v[cur_photo]);
         cur_photo++;
 
-        iter[0] = (1);
+        iter[0] = (it);
         ACCURACY[0] = last_accuracy;
         calc_r(v[9]);
         MAX_R[0] = max_r;
 
         step(v[9], a, c, last_accuracy);
-        copy(v[9], v[cur_photo]);
+        emit progressUpdate((1 * 100) / max_it, last_accuracy, timer.elapsed(), it);
+        if (N < 100 && M < 100) copy(v[9], v[cur_photo]);
         cur_photo++;
 
         type_d cur_accuracy = last_accuracy;
@@ -435,21 +465,25 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
         for (size_t i = 2; i < max_it && cur_accuracy > eps; i++) {
             step(v[9], a, c, cur_accuracy);
             if(i % interval == 0){
-                iter[iter_size] = (i);
+                iter[iter_size] = (it);
                 ACCURACY[iter_size] = (cur_accuracy);
                 calc_r(v[9]);
                 MAX_R[iter_size] = (max_r);
                 iter_size++;
             }
-            if (cur_accuracy < (last_accuracy / type_d(2)) && cur_photo < 9) {
+            if (cur_accuracy < (last_accuracy / type_d(2)) && cur_photo < 9 && N < 100 && M < 100) {
                 copy(v[9], v[cur_photo]);
                 last_accuracy = cur_accuracy;
                 cur_photo++;
             }
+            emit progressUpdate((i * 100) / max_it, cur_accuracy, timer.elapsed(), it);
         }
+        emit progressUpdate(100, cur_accuracy, timer.elapsed(), it);
 
-        for (; cur_photo < 9; cur_photo++) {
-            copy(v[9], v[cur_photo]);
+        if (N < 100 && M < 100) {
+            for (; cur_photo < 9; cur_photo++) {
+                copy(v[9], v[cur_photo]);
+            }
         }
         achieved_accuracy = cur_accuracy;
         calc_r(v[9]);
@@ -460,17 +494,20 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
         ACCURACY.resize(iter_size);
         MAX_R.resize(iter_size);
     } else if(meth == Methods::mvr){
+        timer.start();
         step_mvr(v[9], a, c, last_accuracy);
-        copy(v[9], v[cur_photo]);
+        emit progressUpdate((0 * 100) / max_it, last_accuracy, timer.elapsed(), it);
+        if (N < 100 && M < 100) copy(v[9], v[cur_photo]);
         cur_photo++;
 
-        iter[0] = (1);
+        iter[0] = (it);
         ACCURACY[0] = last_accuracy;
         calc_r(v[9]);
         MAX_R[0] = max_r;
 
         step_mvr(v[9], a, c, last_accuracy);
-        copy(v[9], v[cur_photo]);
+        emit progressUpdate((1 * 100) / max_it, last_accuracy, timer.elapsed(), it);
+        if (N < 100 && M < 100) copy(v[9], v[cur_photo]);
         cur_photo++;
 
         type_d cur_accuracy = last_accuracy;
@@ -478,21 +515,25 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
         for (size_t i = 2; i < max_it && cur_accuracy > eps; i++) {
             step_mvr(v[9], a, c, cur_accuracy);
             if(i % interval == 0){
-                iter[iter_size] = (i);
+                iter[iter_size] = (it);
                 ACCURACY[iter_size] = (cur_accuracy);
                 calc_r(v[9]);
                 MAX_R[iter_size] = (max_r);
                 iter_size++;
             }
-            if (cur_accuracy < (last_accuracy / type_d(2)) && cur_photo < 9) {
+            if (cur_accuracy < (last_accuracy / type_d(2)) && cur_photo < 9 && N < 100 && M < 100) {
                 copy(v[9], v[cur_photo]);
                 last_accuracy = cur_accuracy;
                 cur_photo++;
             }
+            emit progressUpdate((i * 100) / max_it, cur_accuracy, timer.elapsed(), it);
         }
+        emit progressUpdate(100, cur_accuracy, timer.elapsed(), it);
 
-        for (; cur_photo < 9; cur_photo++) {
-            copy(v[9], v[cur_photo]);
+        if (N < 100 && M < 100) {
+            for (; cur_photo < 9; cur_photo++) {
+                copy(v[9], v[cur_photo]);
+            }
         }
         achieved_accuracy = cur_accuracy;
         calc_r(v[9]);
@@ -503,6 +544,8 @@ void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d 
         ACCURACY.resize(iter_size);
         MAX_R.resize(iter_size);
     }
+    duration = timer.elapsed();
+    emit solveFinished();
 }
 
 inline int solver::is_border(int i, int j){

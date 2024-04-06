@@ -1,10 +1,12 @@
 #pragma once
+#include <QObject>
+#include <QElapsedTimer>
 #include <vector>
-#include <utility>
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/math/constants/constants.hpp>
 
 #define type_d high_precision_type
+
 using high_precision_type = boost::multiprecision::cpp_dec_float_50;
 
 namespace u_test {
@@ -43,7 +45,8 @@ enum Methods {
     zeidel, mvr
 };
 
-class solver {
+class solver : public QObject {
+    Q_OBJECT
 
     type_d (*u0y)(type_d);
     type_d (*u1y)(type_d);
@@ -77,17 +80,22 @@ public:
     int meth = Methods::zeidel;
     type_d x0, X, y0, Y, k, h, hor, ver, A, max_z, achieved_accuracy, max_r, epsilon, max_x, max_y;
     bool valid = 0;
-    type_d w = 1.5;
-    type_d w2 = 1.5;
+    type_d w = type_d(1.5);
+    qint64 duration;
+    QElapsedTimer timer;
+
     std::vector<int> iter;
     std::vector<type_d> right_side;
     std::vector<type_d> MAX_Z;
     std::vector<type_d> MAX_R;
     std::vector<type_d> ACCURACY;
-    solver();
 
-    solver(int function);
-
-    void solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it, std::vector<std::vector<std::vector<type_d>>>& v, std::vector<std::vector<std::vector<type_d>>>& z);
-    void solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps,int m_it, std::vector<std::vector<std::vector<type_d>>>& v);
+    void constructor();
+    void constructor(int function);
+public slots:
+    Q_INVOKABLE void solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it, std::vector<std::vector<std::vector<type_d>>>& v, std::vector<std::vector<std::vector<type_d>>>& z);
+    Q_INVOKABLE void solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps,int m_it, std::vector<std::vector<std::vector<type_d>>>& v);
+signals:
+    void progressUpdate(int progress, type_d accuracy, qint64 elapsed, int curr_it);
+    void solveFinished();
 };
