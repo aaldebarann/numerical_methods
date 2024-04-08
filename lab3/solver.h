@@ -45,20 +45,6 @@ enum Methods {
     zeidel, mvr
 };
 
-class Matrix {
-    size_t size1 = 0, size2 = 0;
-    public:
-    /* Matrix(): std::vector<type_d>() {}
-    Matrix(size_t size1, size_t size2): std::vector<type_d>(size1 * size2) {
-        this->size1 = size1;
-        this->size2 = size2;
-    }
-    */
-    Matrix() {
-
-    }
-}
-
 class solver : public QObject {
     Q_OBJECT
 
