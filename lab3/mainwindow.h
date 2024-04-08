@@ -46,7 +46,10 @@ public:
         progwin->show();
     }
     void closeWindow(){
-        progwin->close();
+        progwin->setVisible(false);
+    }
+    void showWindow(){
+        progwin->setVisible(true);
     }
 public slots:
     void handleProgressUpdate(int progress, type_d accuracy, qint64 elapsed, int curr_it) {
@@ -89,6 +92,7 @@ public:
     QSurface3DSeries *dataPSeries = nullptr;
     QSurface3DSeries *dataTrueSeries = nullptr;
     ProgressWindow *prog = nullptr;
+    ProgressWindow *prog2 = nullptr;
     solver slv;
     solver slv2;
     std::vector<std::vector<std::vector<type_d>>> v;

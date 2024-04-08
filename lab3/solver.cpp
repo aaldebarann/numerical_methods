@@ -263,7 +263,7 @@ Q_INVOKABLE void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_
     Y = d;
     k = (Y - y0) / M;
     h = (X - x0) / N;
-    valid = 1;
+    valid = true;
     epsilon = eps;
 
     max_it = m_it;
@@ -418,7 +418,6 @@ Q_INVOKABLE void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_
     Y = d;
     k = (Y - y0) / M;
     h = (X - x0) / N;
-    valid = 1;
     epsilon = eps;
     max_it = m_it;
     it = 0;
@@ -545,6 +544,7 @@ Q_INVOKABLE void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_
         MAX_R.resize(iter_size);
     }
     duration = timer.elapsed();
+    valid = true;
     emit solveFinished();
 }
 
