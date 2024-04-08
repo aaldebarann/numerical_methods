@@ -95,56 +95,50 @@ void solver::constructor(int function) {
 }
 
 
-void solver::prepare(std::vector<std::vector<type_d>>& v, std::vector<std::vector<type_d>>& z, type_d a, type_d c) {
-    v.resize(N + 1);
-    for (int i = 0; i < N + 1; i++)
-        v[i].resize(M + 1);
+void solver::prepare(Matrix& v, Matrix& z, type_d a, type_d c) {
+    v.resize(N + 1, M + 1);
 
-    z.resize(N + 1);
-    for (int i = 0; i < N + 1; i++)
-        z[i].resize(M + 1);
+    z.resize(N + 1, M + 1);
 
 
     for (int i = 0; i < N + 1; i++) {
-        v[i][0] = ux0(a + h * i);
-        v[i][M] = ux1(a + h * i);
+        v(i, 0) = ux0(a + h * i);
+        v(i, M) = ux1(a + h * i);
     }
 
     for (int i = 1; i < M; i++) {
-        v[0][i] = u0y(c + k * i);
-        v[M][i] = u1y(c + k * i);
+        v(0, i) = u0y(c + k * i);
+        v(M, i) = u1y(c + k * i);
     }
 
     for (int i = 1; i < N; i++)
         for (int j = 1; j < M; j++)
-            v[i][j] = ux0(a + h * i) + k * j * (ux1(a+ h * i) - ux0(a + h * i));
+            v(i, j) = ux0(a + h * i) + k * j * (ux1(a+ h * i) - ux0(a + h * i));
 
     for (int i = 0; i < N + 1; i++)
         for (int j = 0; j < M + 1; j++)
-            z[i][j] = 0;
+            z(i, j) = 0;
 }
 
-void solver::prepare(std::vector<std::vector<type_d>>& v, type_d a, type_d c) {
-    v.resize(N + 1);
-    for (int i = 0; i < N + 1; i++)
-        v[i].resize(M + 1);
+void solver::prepare(Matrix& v, type_d a, type_d c) {
+    v.resize(N + 1, M + 1);
 
     for (int i = 0; i < N + 1; i++) {
-        v[i][0] = ux0(a + h * i);
-        v[i][M] = ux1(a + h * i);
+        v(i, 0) = ux0(a + h * i);
+        v(i, M) = ux1(a + h * i);
     }
 
     for (int i = 1; i < M; i++) {
-        v[0][i] = u0y(c + k * i);
-        v[M][i] = u1y(c + k * i);
+        v(0, i) = u0y(c + k * i);
+        v(M, i) = u1y(c + k * i);
     }
 
     for (int i = 1; i < N; i++)
         for (int j = 1; j < M; j++)
-            v[i][j] = ux0(a + h * i) + k * j * (ux1(a+ h * i) - ux0(a + h * i));
+            v(i, j) = ux0(a + h * i) + k * j * (ux1(a+ h * i) - ux0(a + h * i));
 }
 
-void solver::step(std::vector<std::vector<type_d>>& v, std::vector<std::vector<type_d>>& z, type_d a, type_d c, type_d& mz, type_d& acc) {
+void solver::step(Matrix& v, Matrix& z, type_d a, type_d c, type_d& mz, type_d& acc) {
     //zeidel
 
     it++;
@@ -153,23 +147,23 @@ void solver::step(std::vector<std::vector<type_d>>& v, std::vector<std::vector<t
     type_d last_v;
     for (int i = 1; i < N; i++)
         for (int j = 1; j < M; j++) {
-            last_v = v[i][j];
-            v[i][j] = (-f(a + h * i, c + k * j)
-                       - hor * v[i - 1][j]
-                       - hor * v[i + 1][j]
-                       - ver * v[i][j - 1]
-                       - ver * v[i][j + 1] ) / A;
-            if (abs(last_v - v[i][j]) > accuracy)
-                accuracy = abs(last_v - v[i][j]);
-            z[i][j] = abs(v[i][j] - u(a + i * h, c + j * k));
-            if (z[i][j] > max_z)
-                max_z = z[i][j];
+            last_v = v(i, j);
+            v(i, j) = (-f(a + h * i, c + k * j)
+                       - hor * v(i - 1, j)
+                       - hor * v(i + 1, j)
+                       - ver * v(i, j - 1)
+                       - ver * v(i, j + 1) ) / A;
+            if (abs(last_v - v(i, j)) > accuracy)
+                accuracy = abs(last_v - v(i, j));
+            z(i, j) = abs(v(i, j) - u(a + i * h, c + j * k));
+            if (z(i, j) > max_z)
+                max_z = z(i, j);
         }
     mz = max_z;
     acc = accuracy;
 }
 
-void solver::step(std::vector<std::vector<type_d>>& v, type_d a, type_d c, type_d& acc) {
+void solver::step(Matrix& v, type_d a, type_d c, type_d& acc) {
     //zeidel
 
     it++;
@@ -177,19 +171,19 @@ void solver::step(std::vector<std::vector<type_d>>& v, type_d a, type_d c, type_
     type_d last_v;
     for (int i = 1; i < N; i++)
         for (int j = 1; j < M; j++) {
-            last_v = v[i][j];
-            v[i][j] = (-f(a + h * i, c + k * j)
-                       - hor * v[i - 1][j]
-                       - hor * v[i + 1][j]
-                       - ver * v[i][j - 1]
-                       - ver * v[i][j + 1] ) / A;
-            if (abs(last_v - v[i][j]) > accuracy)
-                accuracy = abs(last_v - v[i][j]);
+            last_v = v(i, j);
+            v(i, j) = (-f(a + h * i, c + k * j)
+                       - hor * v(i - 1, j)
+                       - hor * v(i + 1, j)
+                       - ver * v(i, j - 1)
+                       - ver * v(i, j + 1) ) / A;
+            if (abs(last_v - v(i, j)) > accuracy)
+                accuracy = abs(last_v - v(i, j));
         }
     acc = accuracy;
 }
 
-void solver::step_mvr(std::vector<std::vector<type_d>>& v, std::vector<std::vector<type_d>>& z, type_d a, type_d c, type_d& mz, type_d& acc) {
+void solver::step_mvr(Matrix& v, Matrix& z, type_d a, type_d c, type_d& mz, type_d& acc) {
     //mvr
 
     it++;
@@ -198,25 +192,25 @@ void solver::step_mvr(std::vector<std::vector<type_d>>& v, std::vector<std::vect
     type_d last_v;
     for (int i = 1; i < N; i++)
         for (int j = 1; j < M; j++) {
-            last_v = v[i][j];
-            v[i][j] = (- w * f(a + h * i, c + k * j)
-                       - w * hor * v[i - 1][j]
-                       - w * hor * v[i + 1][j]
-                       - w * ver * v[i][j - 1]
-                       - w * ver * v[i][j + 1]
+            last_v = v(i, j);
+            v(i, j) = (- w * f(a + h * i, c + k * j)
+                       - w * hor * v(i - 1, j)
+                       - w * hor * v(i + 1, j)
+                       - w * ver * v(i, j - 1)
+                       - w * ver * v(i, j + 1)
                        +(1 - w) * A * last_v) / A;
-            if (abs(last_v - v[i][j]) > accuracy)
-                accuracy = abs(last_v - v[i][j]);
-            z[i][j] = abs(v[i][j] - u(a + i * h, c + j * k));
-            if (z[i][j] > max_z)
-                max_z = z[i][j];
+            if (abs(last_v - v(i, j)) > accuracy)
+                accuracy = abs(last_v - v(i, j));
+            z(i, j) = abs(v(i, j) - u(a + i * h, c + j * k));
+            if (z(i, j) > max_z)
+                max_z = z(i, j);
         }
 
     mz = max_z;
     acc = accuracy;
 }
 
-void solver::step_mvr(std::vector<std::vector<type_d>>& v, type_d a, type_d c, type_d& acc) {
+void solver::step_mvr(Matrix& v, type_d a, type_d c, type_d& acc) {
     //mvr
 
     it++;
@@ -224,36 +218,36 @@ void solver::step_mvr(std::vector<std::vector<type_d>>& v, type_d a, type_d c, t
     type_d last_v;
     for (int i = 1; i < N; i++)
         for (int j = 1; j < M; j++) {
-            last_v = v[i][j];
-            v[i][j] = (- w * f(a + h * i, c + k * j)
-                       - w * hor * v[i - 1][j]
-                       - w * hor * v[i + 1][j]
-                       - w * ver * v[i][j - 1]
-                       - w * ver * v[i][j + 1]
+            last_v = v(i, j);
+            v(i, j) = (- w * f(a + h * i, c + k * j)
+                       - w * hor * v(i - 1, j)
+                       - w * hor * v(i + 1, j)
+                       - w * ver * v(i, j - 1)
+                       - w * ver * v(i, j + 1)
                        + (1 - w) * A * last_v) / A;
-            if (abs(last_v - v[i][j]) > accuracy)
-                accuracy = abs(last_v - v[i][j]);
+            if (abs(last_v - v(i, j)) > accuracy)
+                accuracy = abs(last_v - v(i, j));
         }
     acc = accuracy;
 }
 
 
-void solver::copy(std::vector<std::vector<type_d>>& v1, std::vector<std::vector<type_d>>& z1, std::vector<std::vector<type_d>>& v2, std::vector<std::vector<type_d>>& z2) {
+void solver::copy(Matrix& v1, Matrix& z1, Matrix& v2, Matrix& z2) {
     for (int i = 0; i <= N; i++)
         for (int j = 0; j <= M; j++) {
-            v2[i][j] = v1[i][j];
-            z2[i][j] = z1[i][j];
+            v2(i, j) = v1(i, j);
+            z2(i, j) = z1(i, j);
         }
 }
 
-void solver::copy(std::vector<std::vector<type_d>>& v1,std::vector<std::vector<type_d>>& v2) {
+void solver::copy(Matrix& v1,Matrix& v2) {
     for (int i = 0; i <= N; i++)
         for (int j = 0; j <= M; j++) {
-            v2[i][j] = v1[i][j];
+            v2(i, j) = v1(i, j);
         }
 }
 
-Q_INVOKABLE void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it, std::vector<std::vector<std::vector<type_d>>>& v, std::vector<std::vector<std::vector<type_d>>>& z) {
+Q_INVOKABLE void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it, std::vector<Matrix>& v, std::vector<Matrix>& z) {
     timer.start();
     N = n;
     M = m;
@@ -408,7 +402,7 @@ Q_INVOKABLE void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_
     emit solveFinished();
 }
 
-Q_INVOKABLE void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it, std::vector<std::vector<std::vector<type_d>>>& v) {
+Q_INVOKABLE void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it, std::vector<Matrix>& v) {
     timer.start();
     N = n;
     M = m;
@@ -552,32 +546,32 @@ inline int solver::is_border(int i, int j){
     return ((i == 0) || (j == 0) || (i == N) || (j == M)) ? 1 : 0;
 }
 
-void solver::fill_right_side(std::vector<std::vector<type_d>>& v, type_d a, type_d c){
+void solver::fill_right_side(Matrix& v, type_d a, type_d c){
     right_side.clear();
     for (int j = 1; j < M; j++){
         for (int i = 1; i < N; i++){
             right_side.push_back(- f(a + i * h, c + j * k)
-                                 - hor * v[i - 1][j] * is_border(i - 1, j)
-                                 - hor * v[i + 1][j] * is_border(i + 1, j)
-                                 - ver * v[i][j - 1] * is_border(i, j - 1)
-                                 - ver * v[i][j + 1] * is_border(i, j + 1));
+                                 - hor * v(i - 1, j) * is_border(i - 1, j)
+                                 - hor * v(i + 1, j) * is_border(i + 1, j)
+                                 - ver * v(i, j - 1) * is_border(i, j - 1)
+                                 - ver * v(i, j + 1) * is_border(i, j + 1));
         }
     }
 }
 
-void solver::calc_r(std::vector<std::vector<type_d>>& v){
+void solver::calc_r(Matrix& v){
     int place = 0;
     type_d r = type_d(0);
     for (int j = 1; j < M; j++){
         for (int i = 1; i < N; i++){
-            r += (A  * v[i][j] + (!(is_border(i - 1, j))) * hor * v[i - 1][j]
-                  + (!(is_border(i + 1, j))) * hor * v[i + 1][j]
-                  + (!(is_border(i, j - 1))) * hor * v[i][j - 1]
-                  + (!(is_border(i, j + 1))) * hor * v[i][j + 1] - right_side[place]) *
-                 (A  * v[i][j] + (!(is_border(i - 1, j))) * hor * v[i - 1][j]
-                  + (!(is_border(i + 1, j))) * hor * v[i + 1][j]
-                  + (!(is_border(i, j - 1))) * hor * v[i][j - 1]
-                  + (!(is_border(i, j + 1))) * hor * v[i][j + 1] - right_side[place]);
+            r += (A  * v(i, j) + (!(is_border(i - 1, j))) * hor * v(i - 1, j)
+                  + (!(is_border(i + 1, j))) * hor * v(i + 1, j)
+                  + (!(is_border(i, j - 1))) * hor * v(i, j - 1)
+                  + (!(is_border(i, j + 1))) * hor * v(i, j + 1) - right_side[place]) *
+                 (A  * v(i, j) + (!(is_border(i - 1, j))) * hor * v(i - 1, j)
+                  + (!(is_border(i + 1, j))) * hor * v(i + 1, j)
+                  + (!(is_border(i, j - 1))) * hor * v(i, j - 1)
+                  + (!(is_border(i, j + 1))) * hor * v(i, j + 1) - right_side[place]);
             place++;
         }
     }
