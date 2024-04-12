@@ -84,7 +84,6 @@ MainWindow::MainWindow(QWidget* parent)
     connect(taskVariant2, &QRadioButton::clicked, this, &MainWindow::onRadioButtonClicked);
     connect(methVariant1, &QRadioButton::clicked, this, &MainWindow::onRadioButtonClicked);
     connect(methVariant2, &QRadioButton::clicked, this, &MainWindow::onRadioButtonClicked);
-    connect(&slv, &solver::solveFinished, this, &MainWindow::handleSolveFinished);
 
     slider = new QSlider(Qt::Horizontal);
     slider->setMinimum(1);
@@ -217,8 +216,8 @@ void MainWindow::showGraph() {
             slv.interval = interval;
             slv.w = ww;
             prog = new ProgressWindow(&slv, this);
-            prog->show();
-            if (view->hasContext())
+            prog->showWindow();
+            if (view->hasSeries(dataSeries))
                 removeGraph();
             solveInBackground(Xn, Yn, a, b, c, d, epsilon, maxN, v, vPhotos, z, zPhotos);
         }
@@ -238,8 +237,10 @@ void MainWindow::showGraph() {
             slv.w = ww;
             slv2.w = ww2;
             prog = new ProgressWindow(&slv, this);
-            prog->show();
-            if (view->hasContext())
+            prog2 = new ProgressWindow(&slv2, this);
+            prog2->closeWindow();
+            prog->showWindow();
+            if (view->hasSeries(dataSeries))
                 removeGraph();
             solveInBackground(Xn, Yn, a, b, c, d, epsilon, maxN, v, vPhotos, epsilon2, maxN2, v2, v2Photos);
         }
@@ -349,7 +350,7 @@ void MainWindow::handleSolveFinished(){
         emit solverFinished2();
     } else if (slv.task == Functions::tmain) {
         if (Xn >= 1000 || Yn >= 1000) { skipx = Xn / 100; skipy = Yn / 100; Xn = 100; Yn = 100; }
-        if (!help) {
+        if (slv.valid && !slv2.valid) {
             dataSeries = new QSurface3DSeries;
             if (Xn < 100 && Yn < 100)
                 dataSeries->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
@@ -373,7 +374,6 @@ void MainWindow::handleSolveFinished(){
             view->axisY()->setRange(-1, 1);
             slider->setValue(10);
             valueLabel->setText("Снимок: 10");
-            prog->closeWindow();
             if (Xn < 100 && Yn < 100) {
                 slider->setEnabled(true);
                 for(size_t i = 0; i < 10; i++){
@@ -397,7 +397,9 @@ void MainWindow::handleSolveFinished(){
                 }
             } else
                 slider->setDisabled(true);
-        } else {
+            prog->closeWindow();
+            prog2->showWindow();
+        } else if (slv.valid && slv2.valid) {
             if (Xn < 100 && Yn < 100) {
                 slider->setEnabled(true);
                 for(size_t i = 0; i < 10; i++){
@@ -430,16 +432,9 @@ void MainWindow::handleSolveFinished(){
                     }
                 }
             }
-        }
-        if (help) {
             emit solverFinished3();
-            prog->closeWindow();
-        } else {
-            prog->closeWindow();
-            prog = new ProgressWindow(&slv2, this);
-            prog->show();
+            prog2->closeWindow();
         }
-        help = !help;
     }
 }
 
@@ -719,8 +714,8 @@ void MainWindow::solveInBackground(int n, int m, type_d a, type_d b, type_d c, t
             &v, &vPhotos, &z, &zPhotos]() {
         slv.solve(n, m, a, b, c, d, eps, m_it, v, vPhotos, z, zPhotos);
         slv.moveToThread(this->thread());
+        handleSolveFinished();
     });
-    connect(&slv, &solver::solveFinished, this, &MainWindow::handleSolveFinished);
     connect(this, &MainWindow::solverFinished2, thread, &QThread::quit);
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
     thread->start();
@@ -732,15 +727,15 @@ void MainWindow::solveInBackground(int n, int m, type_d a, type_d b, type_d c, t
     QThread* thread = new QThread();
     slv.moveToThread(thread);
     slv2.moveToThread(thread);
-    connect(&slv, &solver::solveFinished, this, &MainWindow::handleSolveFinished);
-    connect(thread, &QThread::started, &slv, [this, n, m, a, b, c, d, eps, m_it,
-            &v, &vPhotos, eps2, m_it2, &v2, &v2Photos]() {
-        slv.solve(n, m, a, b, c, d, eps, m_it, v, vPhotos);
-        slv.moveToThread(this->thread());
-        slv2.solve(2 * n, 2 * m, a, b, c, d, eps2, m_it2, v2, v2Photos);
+    connect(thread, &QThread::started, &slv, [this, n, m, a, b, c, d, eps, m_it, &v, eps2, m_it2, &v2]() {
+        slv2.valid = false;
+        slv.solve(n, m, a, b, c, d, eps, m_it, v);
+        handleSolveFinished();
+        slv2.solve(2 * n, 2 * m, a, b, c, d, eps2, m_it2, v2);
+        handleSolveFinished();
         slv2.moveToThread(this->thread());
+        slv.moveToThread(this->thread());
     });
-    connect(&slv2, &solver::solveFinished, this, &MainWindow::handleSolveFinished);
     connect(this, &MainWindow::solverFinished3, thread, &QThread::quit);
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
     thread->start();
