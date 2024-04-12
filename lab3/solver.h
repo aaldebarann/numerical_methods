@@ -3,11 +3,13 @@
 #include <QElapsedTimer>
 #include <vector>
 #include <boost/multiprecision/cpp_dec_float.hpp>
+#include <boost/multiprecision/float128.hpp>
 #include <boost/math/constants/constants.hpp>
 
-#define type_d high_precision_type
-
 using high_precision_type = boost::multiprecision::cpp_dec_float_50;
+typedef high_precision_type type_d;
+
+// boost::multiprecision::float128;
 
 namespace u_test {
 type_d u(type_d x, type_d y);
@@ -45,8 +47,8 @@ enum Methods {
     zeidel, mvr
 };
 
-class Matrix {
-    std::vector<type_d> data;
+class Matrix: std::vector<type_d> {
+    //std::vector<type_d> data;
     size_t size1, size2;
 public:
     Matrix() {
@@ -56,15 +58,15 @@ public:
     Matrix(size_t size1, size_t size2) {
         this->size1 = size1;
         this->size2 = size2;
-        data.resize(size1 * size2);
+        ((std::vector<type_d>*)this)->reserve(size1 * size2);
     }
     void resize(size_t size1, size_t size2) {
         this->size1 = size1;
         this->size2 = size2;
-        data.resize(size1 * size2);
+        ((std::vector<type_d>*)this)->reserve(size1 * size2);
     }
     inline type_d& operator()(size_t i, size_t j) {
-        return data[i*size2 + j];
+        return (*this)[i*size2 + j];
     }
 };
 
@@ -116,8 +118,11 @@ public:
     void constructor();
     void constructor(int function);
 public slots:
-    Q_INVOKABLE void solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it, std::vector<Matrix>& v, std::vector<Matrix>& z);
-    Q_INVOKABLE void solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps,int m_it, std::vector<Matrix>& v);
+    Q_INVOKABLE void solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it,
+                           Matrix & v, std::vector<Matrix>& vHistory,
+                           Matrix & z, std::vector<Matrix>& zHistory);
+    Q_INVOKABLE void solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps,int m_it,
+                           Matrix & v, std::vector<Matrix>& vHistory);
 signals:
     void progressUpdate(int progress, type_d accuracy, qint64 elapsed, int curr_it);
     void solveFinished();
