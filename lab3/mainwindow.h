@@ -53,8 +53,8 @@ public slots:
         progwin->setWindowTitle(QString("Выполнение... %1%").arg(progress));
         accuracyLabel->setText(QString("Текущая точность: " + QString::number(static_cast<double>(accuracy)) +
                                        "\nТекущий номер итерации: " + QString::number(curr_it) +
-                                       "\nВремя выполнения программы: " + QString::number(elapsed / 1000) + " секунд\n" +
-                                       "Среднее время итерации: " +  QString::number(static_cast<float>(elapsed) / (1000 * curr_it)) + " сек/итер"));
+                                       "\nВремя выполнения программы: " + QString::number(elapsed / 1000) + " сек.\n" +
+                                       "Среднее время итерации: " +  QString::number(static_cast<float>(elapsed) / (1000 * curr_it)) + " сек./итер."));
     }
 
 private:

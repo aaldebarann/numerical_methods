@@ -162,11 +162,13 @@ void MainWindow::showTrueGraph(){
     lastPlotButton = true;
     if (selectedTask == Functions::test){
         true_u = u_test::u;
-        if (view->hasContext()) view->removeSeries(dataTrueSeries);
+        if (view->hasSeries(dataTrueSeries)) view->removeSeries(dataTrueSeries);
         dataTrueSeries = new QSurface3DSeries;
         if (Xn >= 1000 || Yn >= 1000) { skipx = Xn / 100; skipy = Yn / 100; Xn = 100; Yn = 100; }
-        if (Xn < 100 && Yn < 100) dataTrueSeries->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
-        else dataTrueSeries->setDrawMode(QSurface3DSeries::DrawSurface);
+        if (Xn < 100 && Yn < 100)
+            dataTrueSeries->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
+        else
+            dataTrueSeries->setDrawMode(QSurface3DSeries::DrawSurface);
         for (int j = 0; j <= Yn; j++) {
             QSurfaceDataRow* row = new QSurfaceDataRow;
             for (int i = 0; i <= Xn; i++) {
@@ -176,12 +178,14 @@ void MainWindow::showTrueGraph(){
         }
         dataTrueSeries->setItemLabelFormat("True solution @xLabel @yLabel @zLabel");
     } else {
-        if (view->hasContext())
+        if (view->hasSeries(dataTrueSeries))
             view->removeSeries(dataTrueSeries);
         dataTrueSeries = new QSurface3DSeries;
         if (Xn >= 1000 || Yn >= 1000) { skipx = Xn / 100; skipy = Yn / 100; Xn = 100; Yn = 100; }
-        if (Xn < 100 && Yn < 100) dataTrueSeries->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
-        else dataTrueSeries->setDrawMode(QSurface3DSeries::DrawSurface);
+        if (Xn < 100 && Yn < 100)
+            dataTrueSeries->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
+        else
+            dataTrueSeries->setDrawMode(QSurface3DSeries::DrawSurface);
         for (int j = 0; j <= 2 * Yn; j++) {
             QSurfaceDataRow* row = new QSurfaceDataRow;
             for (int i = 0; i <= 2 * Xn; i++) {
@@ -191,7 +195,7 @@ void MainWindow::showTrueGraph(){
         }
         dataTrueSeries->setItemLabelFormat("Solution 2N * 2M @xLabel @yLabel @zLabel");
     }
-    // ^_^ dataTrueSeries->setWireframeColor(QColor::fromString("#ff00ff"));
+    dataTrueSeries->setWireframeColor(QColor::fromString("#ff00ff"));
     view->addSeries(dataTrueSeries);
     view->axisX()->setRange(static_cast<double>(a), static_cast<double>(b));
     view->axisZ()->setRange(static_cast<double>(c), static_cast<double>(d));
@@ -221,7 +225,7 @@ void MainWindow::showGraph() {
                 removeGraph();
             solveInBackground(Xn, Yn, a, b, c, d, epsilon, maxN, v, vPhotos, z, zPhotos);
         }
-        else if (!view->hasContext()) {
+        else if (!view->hasSeries(dataSeries)) {
             drawGraph();
         }
         else return;
@@ -244,7 +248,7 @@ void MainWindow::showGraph() {
                 removeGraph();
             solveInBackground(Xn, Yn, a, b, c, d, epsilon, maxN, v, vPhotos, epsilon2, maxN2, v2, v2Photos);
         }
-        else if (!view->hasContext()) {
+        else if (!view->hasSeries(dataSeries)) {
             drawGraph();
         }
         else return;
@@ -277,7 +281,7 @@ void MainWindow::drawGraph(){
     }
     dataSeries->setItemLabelFormat("Solution @xLabel @yLabel @zLabel");
     dataSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
-    // ^_^ dataSeries->setWireframeColor(QColor::fromString("#daa520"));
+    dataSeries->setWireframeColor(QColor::fromString("#daa520"));
     //dataSeries->setTextureFile("iceberg.jpg");
     dataSeries->setBaseColor(QColor(0, 0, 255, 255));
     view->addSeries(dataSeries);
@@ -296,8 +300,10 @@ void MainWindow::handleSolveFinished(){
     if (slv.task == Functions::test) {
         dataSeries = new QSurface3DSeries;
         if (Xn >= 1000 || Yn >= 1000) { skipx = Xn / 100; skipy = Yn / 100; Xn = 100; Yn = 100; }
-        if (Xn < 100 && Yn < 100) dataSeries->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
-        else dataSeries->setDrawMode(QSurface3DSeries::DrawSurface);
+        if (Xn < 100 && Yn < 100)
+            dataSeries->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
+        else
+            dataSeries->setDrawMode(QSurface3DSeries::DrawSurface);
         for (int j = 0; j <= Yn; j++) {
             QSurfaceDataRow* row = new QSurfaceDataRow;
             for (int i = 0; i <= Xn; i++) {
@@ -338,7 +344,7 @@ void MainWindow::handleSolveFinished(){
         }
         dataSeries->setItemLabelFormat("Solution @xLabel @yLabel @zLabel");
         dataSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
-        // ^_^ dataSeries->setWireframeColor(QColor::fromString("#daa520"));
+        dataSeries->setWireframeColor(QColor::fromString("#daa520"));
         //dataSeries->setTextureFile("iceberg.jpg");
         view->addSeries(dataSeries);
         view->axisX()->setRange(static_cast<double>(a), static_cast<double>(b));
@@ -366,7 +372,7 @@ void MainWindow::handleSolveFinished(){
             }
             dataSeries->setItemLabelFormat("Solution @xLabel @yLabel @zLabel");
             dataSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
-            // ^_^ dataSeries->setWireframeColor(QColor::fromString("#daa520"));
+            dataSeries->setWireframeColor(QColor::fromString("#daa520"));
             //dataSeries->setTextureFile("iceberg.jpg");
             view->addSeries(dataSeries);
             view->axisX()->setRange(static_cast<double>(a), static_cast<double>(b));
@@ -393,7 +399,7 @@ void MainWindow::handleSolveFinished(){
                     iterations[t]->setFlatShadingEnabled(false);
                     iterations[t]->setItemLabelFormat("Solution @xLabel @yLabel @zLabel");
                     iterations[t]->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
-                    // ^_^ iterations[t]->setWireframeColor(QColor::fromString("#daa520"));
+                    iterations[t]->setWireframeColor(QColor::fromString("#daa520"));
                 }
             } else
                 slider->setDisabled(true);
@@ -419,7 +425,7 @@ void MainWindow::handleSolveFinished(){
                     iterations2[t]->setFlatShadingEnabled(false);
                     iterations2[t]->setItemLabelFormat("Solution 2 @xLabel @yLabel @zLabel");
                     iterations2[t]->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
-                    // ^_^ iterations2[t]->setWireframeColor(QColor::fromString("#ff00ff"));
+                    iterations2[t]->setWireframeColor(QColor::fromString("#ff00ff"));
                 }
             } else
                 slider->setDisabled(true);
@@ -439,7 +445,7 @@ void MainWindow::handleSolveFinished(){
 }
 
 void MainWindow::removeGraph(){
-    if (view->hasContext()) view->removeSeries(dataSeries);
+    if (view->hasSeries(dataSeries)) view->removeSeries(dataSeries);
     for (auto it : view->seriesList()) {
         if (it == dataTrueSeries || it == dataPSeries)
             continue;
@@ -449,11 +455,11 @@ void MainWindow::removeGraph(){
 }
 
 void MainWindow::removeTrueGraph(){
-    if (view->hasContext()) view->removeSeries(dataTrueSeries);
+    if (view->hasSeries(dataTrueSeries)) view->removeSeries(dataTrueSeries);
 }
 
 void MainWindow::removePGraph(){
-    if (view->hasContext()) view->removeSeries(dataPSeries);
+    if (view->hasSeries(dataPSeries)) view->removeSeries(dataPSeries);
 }
 
 void MainWindow::onRadioButtonClicked(){
@@ -482,7 +488,7 @@ void MainWindow::setT(int t){
 }
 
 void MainWindow::showTable() {
-    if (!view->hasContext()) return;
+    if (!view->hasSeries(dataSeries)) return;
     int skipx = 1;
     int skipy = 1;
     int Xn = slv.N;
@@ -509,7 +515,7 @@ void MainWindow::showTable() {
     tableWidget1->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     tableWidget2->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     tableWidget3->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    if(slv.task == Functions::test) {
+    if (slv.task == Functions::test) {
         for (int i = 0; i <= Xn; i++) {
             for (int j = 0; j <= Yn; j++) {
                 tableWidget1->setItem(j, i, new QTableWidgetItem(QString::number(static_cast<double>(u_test::u(a + slv.h * i * skipx, c + slv.k * j * skipy)))));
@@ -568,7 +574,7 @@ void MainWindow::showSummary(){
     if(slv.task == Functions::test){
         summary->setText("<center>"
                          "<h3>"
-                         "<p> Для решения тестовой задачи использованы сетка с числом разбиений по x N = " + QString::number(slv.N) + ", и числом разбиений по y m = " + QString::number(slv.M) +
+                         "<p> Для решения тестовой задачи использованы сетка с числом разбиений по x: N = " + QString::number(slv.N) + ", и числом разбиений по y: M = " + QString::number(slv.M) +
                          ", метод верхней релаксации с параметром ω = " + QString::number(static_cast<double>(slv.w)) + ", применены критерии" +
                          " остановки по точности ε<sub>мет</sub> = " + QString::number(static_cast<double>(slv.epsilon)) + " и по числу итераций N<sub>max</sub> = " + QString::number(slv.max_it) +
                          "</p><p> На решение схемы (СЛАУ) затрачено итераций N = " + QString::number(slv.it) +
@@ -579,7 +585,7 @@ void MainWindow::showSummary(){
                          "</p><p> Задача решена с погрешностью ε<sub>1</sub> = " + QString::number(static_cast<double>(slv.max_z)) +
                          "</p><p> Максимальное отклонение точного и численного решений наблюдается в узле x = " + QString::number(static_cast<double>(slv.max_x)) + ", y = " + QString::number(static_cast<double>(slv.max_y)) +
                          "</p><p> В качестве начального приближения использована линейная интерполяция по x" +
-                         "</p><p> Время выполнения задачи: " + QString::number(slv.duration) + ", среднее время итерации: " + QString::number(slv.duration / slv.it) +
+                         "</p><p> Время выполнения задачи: " + QString::number(slv.duration / 1000) + " cек., среднее время итерации: " + QString::number(static_cast<double>(slv.duration) / (1000 * slv.it)) + " сек." +
                          "</p></h3>"
                          "</center>");
         QStringList headerlist2{"It", "Eps", "||R||", "||Z||"};
@@ -595,7 +601,7 @@ void MainWindow::showSummary(){
     } else if(slv.task == Functions::tmain){
         summary->setText("<center>"
                          "<h3>"
-                         "<p> Для решения основной задачи использованы сетка с числом разбиений по x N = " + QString::number(slv.N) + ", и числом разбиений по y m = " + QString::number(slv.M) +
+                         "<p> Для решения основной задачи использованы сетка с числом разбиений по x: N = " + QString::number(slv.N) + ", и числом разбиений по y: M = " + QString::number(slv.M) +
                          ", метод верхней релаксации с параметром ω = " + QString::number(static_cast<double>(slv.w)) + ", применены критерии" +
                          " остановки по точности ε<sub>мет</sub> = " + QString::number(static_cast<double>(slv.epsilon)) + " и по числу итераций N<sub>max</sub> = " + QString::number(slv.max_it) +
                          "</p><p> На решение схемы (СЛАУ) затрачено итераций N = " + QString::number(slv.it) +
@@ -603,7 +609,7 @@ void MainWindow::showSummary(){
                          "</p><p> Схема (СЛАУ) решена с невязкой || R<sup>(N)</sup>|| = " + QString::number(static_cast<double>(slv.max_r)) +
                          ", для невязки СЛАУ использована евклидова норма" +
                          "</p><p> Для контроля точности решения использована сетка с половинным шагом, метод верхней релаксации с параметром ω<sub>2</sub> = " + QString::number(static_cast<double>(slv2.w)) +
-                         ", применены критерии остановки по точности ε <sub>мет-2</sub> = " + QString::number(static_cast<double>(slv2.epsilon)) + " и по числу итераций N<sub>max-2</sub> = " + QString::number(slv2.max_it) +
+                         ", применены критерии остановки по точности ε<sub>мет-2</sub> = " + QString::number(static_cast<double>(slv2.epsilon)) + " и по числу итераций N<sub>max-2</sub> = " + QString::number(slv2.max_it) +
                          "</p><p> На решение задачи (СЛАУ) затрачено итераций N2 = " + QString::number(slv2.it) +
                          ", и достигнута точность итерационного метода ε<sup>(N2)</sup> = " + QString::number(static_cast<double>(slv2.achieved_accuracy)) +
                          "</p><p> Схема (СЛАУ) на сетке с половинным шагом решена с невязкой\n" + " || R<sup>(N2)</sup>|| = " + QString::number(static_cast<double>(slv2.max_r)) +
@@ -612,6 +618,8 @@ void MainWindow::showSummary(){
                          "</p><p> Задача решена с погрешностью ε<sub>2</sub> = " + QString::number(static_cast<double>(slv.max_z)) +
                          "</p><p> Максимальное отклонение численных решений на основной сетке и сетке с половинным шагом наблюдается в узле x = " + QString::number(static_cast<double>(slv.max_x)) + ", y = " + QString::number(static_cast<double>(slv.max_y)) +
                          "</p><p> В качестве начального приближения на обеих сетках использована линейная интерполяция по x" +
+                         "</p><p> Время выполнения задачи на основной сетке: " + QString::number(slv.duration / 1000) + " cек., среднее время итерации: " + QString::number(static_cast<double>(slv.duration) / (1000 * slv.it)) + " сек." +
+                         "</p><p> Время выполнения задачи на двойной сетке: " + QString::number(slv2.duration / 1000) + " cек., среднее время итерации: " + QString::number(static_cast<double>(slv2.duration) / (1000 * slv2.it)) + " сек." +
                          "</p></h3>"
                          "</center>");
         QStringList headerlist2{"It", "Eps", "||R||", "It2", "Eps2", "||R2||"};
@@ -653,14 +661,16 @@ void MainWindow::showPGraph(){
         if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww || selectedMeth != slv.meth) {
             return;
         }
-        else if (!view->hasContext()) {
+        else if (!view->hasSeries(dataPSeries)) {
         }
         else return;
 
         dataPSeries = new QSurface3DSeries;
         if (Xn >= 1000 || Yn >= 1000) { skipx = Xn / 100; skipy = Yn / 100; Xn = 100; Yn = 100; }
-        if(Xn < 100 && Yn < 100) dataPSeries->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
-        else dataPSeries->setDrawMode(QSurface3DSeries::DrawSurface);
+        if(Xn < 100 && Yn < 100)
+            dataPSeries->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
+        else
+            dataPSeries->setDrawMode(QSurface3DSeries::DrawSurface);
         for (int j = 0; j <= Yn; j++) {
             QSurfaceDataRow* row = new QSurfaceDataRow;
             for (int i = 0; i <= Xn; i++) {
@@ -670,7 +680,7 @@ void MainWindow::showPGraph(){
         }
         dataPSeries->setItemLabelFormat("solution @xLabel @yLabel @zLabel");
         dataPSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
-        // ^_^ dataPSeries->setWireframeColor(QColor::fromString("#daf520"));
+        dataPSeries->setWireframeColor(QColor::fromString("#daf520"));
         view->addSeries(dataPSeries);
         view->axisX()->setRange(static_cast<double>(a), static_cast<double>(b));
         view->axisZ()->setRange(static_cast<double>(c), static_cast<double>(d));
@@ -680,14 +690,16 @@ void MainWindow::showPGraph(){
         if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww || selectedMeth != slv.meth || epsilon2 != slv2.epsilon || slv2.w != ww2 || maxN2 != slv2.max_it) {
             return;
         }
-        else if (!view->hasContext()) {
+        else if (!view->hasSeries(dataPSeries)) {
         }
         else return;
 
         dataPSeries = new QSurface3DSeries;
         if (Xn >= 1000 || Yn >= 1000) { skipx = Xn / 100; skipy = Yn / 100; Xn = 100; Yn = 100; }
-        if(Xn < 100 && Yn < 100) dataPSeries->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
-        else dataPSeries->setDrawMode(QSurface3DSeries::DrawSurface);
+        if(Xn < 100 && Yn < 100)
+            dataPSeries->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
+        else
+            dataPSeries->setDrawMode(QSurface3DSeries::DrawSurface);
         for (int j = 0; j <= Yn; j++) {
             QSurfaceDataRow* row = new QSurfaceDataRow;
             for (int i = 0; i <= Xn; i++) {
@@ -697,7 +709,7 @@ void MainWindow::showPGraph(){
         }
         dataPSeries->setItemLabelFormat("solution @xLabel @yLabel @zLabel");
         dataPSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
-        // ^_^ dataPSeries->setWireframeColor(QColor::fromString("#daf520"));
+        dataPSeries->setWireframeColor(QColor::fromString("#daf520"));
         view->addSeries(dataPSeries);
         view->axisX()->setRange(static_cast<double>(a), static_cast<double>(b));
         view->axisZ()->setRange(static_cast<double>(c), static_cast<double>(d));
@@ -710,8 +722,7 @@ void MainWindow::solveInBackground(int n, int m, type_d a, type_d b, type_d c, t
                                    Matrix& z, std::vector<Matrix>& zPhotos) {
     QThread* thread = new QThread();
     slv.moveToThread(thread);
-    connect(thread, &QThread::started, &slv, [this, n, m, a, b, c, d, eps, m_it,
-            &v, &vPhotos, &z, &zPhotos]() {
+    connect(thread, &QThread::started, &slv, [this, n, m, a, b, c, d, eps, m_it, &v, &vPhotos, &z, &zPhotos]() {
         slv.solve(n, m, a, b, c, d, eps, m_it, v, vPhotos, z, zPhotos);
         slv.moveToThread(this->thread());
         handleSolveFinished();
@@ -727,11 +738,11 @@ void MainWindow::solveInBackground(int n, int m, type_d a, type_d b, type_d c, t
     QThread* thread = new QThread();
     slv.moveToThread(thread);
     slv2.moveToThread(thread);
-    connect(thread, &QThread::started, &slv, [this, n, m, a, b, c, d, eps, m_it, &v, eps2, m_it2, &v2]() {
+    connect(thread, &QThread::started, &slv, [this, n, m, a, b, c, d, eps, m_it, &v, &vPhotos, eps2, m_it2, &v2, &v2Photos]() {
         slv2.valid = false;
-        slv.solve(n, m, a, b, c, d, eps, m_it, v);
+        slv.solve(n, m, a, b, c, d, eps, m_it, v, vPhotos);
         handleSolveFinished();
-        slv2.solve(2 * n, 2 * m, a, b, c, d, eps2, m_it2, v2);
+        slv2.solve(2 * n, 2 * m, a, b, c, d, eps2, m_it2, v2, v2Photos);
         handleSolveFinished();
         slv2.moveToThread(this->thread());
         slv.moveToThread(this->thread());

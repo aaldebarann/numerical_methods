@@ -3,13 +3,11 @@
 #include <QElapsedTimer>
 #include <vector>
 #include <boost/multiprecision/cpp_dec_float.hpp>
-#include <boost/multiprecision/float128.hpp>
 #include <boost/math/constants/constants.hpp>
 
 using high_precision_type = boost::multiprecision::cpp_dec_float_50;
-typedef high_precision_type type_d;
 
-// boost::multiprecision::float128;
+typedef high_precision_type type_d;
 
 namespace u_test {
 type_d u(type_d x, type_d y);
