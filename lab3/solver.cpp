@@ -106,14 +106,14 @@ void solver::prepare(Matrix& v, Matrix& z, type_d a, type_d c) {
         v(i, M) = ux1(a + h * i);
     }
 
-    for (int i = 1; i < M; i++) {
+    for (int i = 0; i < M + 1; i++) {
         v(0, i) = u0y(c + k * i);
-        v(M, i) = u1y(c + k * i);
+        v(N, i) = u1y(c + k * i);
     }
 
     for (int i = 1; i < N; i++)
         for (int j = 1; j < M; j++)
-            v(i, j) = ux0(a + h * i) + k * j * (ux1(a+ h * i) - ux0(a + h * i));
+            v(i, j) = ux0(a + h * i) + k * j * (ux1(a + h * i) - ux0(a + h * i));
 
     for (int i = 0; i < N + 1; i++)
         for (int j = 0; j < M + 1; j++)
@@ -128,9 +128,9 @@ void solver::prepare(Matrix& v, type_d a, type_d c) {
         v(i, M) = ux1(a + h * i);
     }
 
-    for (int i = 1; i < M; i++) {
+    for (int i = 1; i < M + 1; i++) {
         v(0, i) = u0y(c + k * i);
-        v(M, i) = u1y(c + k * i);
+        v(N, i) = u1y(c + k * i);
     }
 
     for (int i = 1; i < N; i++)

@@ -4,6 +4,8 @@
 
 int main(int argc, char *argv[])
 {
+    //boost::multiprecision::mpf_float::default_variable_precision_options(boost::multiprecision::variable_precision_options::preserve_source_precision);
+    //boost::multiprecision::mpf_float::default_precision(4);
     QApplication a(argc, argv);
     QApplication::setStyle(QStyleFactory::create("Fusion"));
     QPalette darkPalette;
