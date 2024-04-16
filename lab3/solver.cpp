@@ -219,7 +219,7 @@ void solver::step_mvr(Matrix& v, type_d a, type_d c, type_d& acc) {
     it++;
     type_d accuracy = 0;
     type_d last_v;
-    size_t i, j;
+    int i, j;
     type_d localAcc = 0;
 #pragma omp parallel for private(i, j, last_v, localAcc)
     for (i = 1; i < N; i++) {
