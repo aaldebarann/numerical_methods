@@ -213,11 +213,18 @@ void solver::step_mvr(Matrix& v, Matrix& z, type_d a, type_d c, type_d& mz, type
 void solver::step_mvr(Matrix& v, type_d a, type_d c, type_d& acc) {
     //mvr
 
+    omp_lock_t accuracyLock;
+    omp_init_lock(&accuracyLock);
+
     it++;
     type_d accuracy = 0;
     type_d last_v;
-    for (int i = 1; i < N; i++)
-        for (int j = 1; j < M; j++) {
+    size_t i, j;
+    type_d localAcc = 0;
+#pragma omp parallel for private(i, j, last_v, localAcc)
+    for (i = 1; i < N; i++) {
+        localAcc = 0;
+        for (j = 1; j < M; j++) {
             last_v = v(i, j);
             v(i, j) = (- w * f(a + h * i, c + k * j)
                        - w * hor * v(i - 1, j)
@@ -225,9 +232,14 @@ void solver::step_mvr(Matrix& v, type_d a, type_d c, type_d& acc) {
                        - w * ver * v(i, j - 1)
                        - w * ver * v(i, j + 1)
                        + (1 - w) * A * last_v) / A;
-            if (abs(last_v - v(i, j)) > accuracy)
-                accuracy = abs(last_v - v(i, j));
+            if (abs(last_v - v(i, j)) > localAcc)
+                localAcc = abs(last_v - v(i, j));
         }
+        omp_set_lock(&accuracyLock);
+        if(accuracy < localAcc)
+            accuracy = localAcc;
+        omp_unset_lock(&accuracyLock);
+    }
     acc = accuracy;
 }
 

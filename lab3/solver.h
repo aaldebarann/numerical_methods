@@ -1,7 +1,9 @@
 #pragma once
+
 #include <QObject>
 #include <QElapsedTimer>
 #include <vector>
+#include <omp.h>
 
 typedef double type_d;
 
