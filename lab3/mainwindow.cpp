@@ -162,7 +162,7 @@ void MainWindow::showTrueGraph(){
     lastPlotButton = true;
     if (selectedTask == Functions::test){
         true_u = u_test::u;
-        if (view->hasSeries(dataTrueSeries)) view->removeSeries(dataTrueSeries);
+        if (view->hasContext()) view->removeSeries(dataTrueSeries);
         dataTrueSeries = new QSurface3DSeries;
         if (Xn >= 1000 || Yn >= 1000) { skipx = Xn / 100; skipy = Yn / 100; Xn = 100; Yn = 100; }
         if (Xn < 100 && Yn < 100)
@@ -178,7 +178,7 @@ void MainWindow::showTrueGraph(){
         }
         dataTrueSeries->setItemLabelFormat("True solution @xLabel @yLabel @zLabel");
     } else {
-        if (view->hasSeries(dataTrueSeries))
+        if (view->hasContext())
             view->removeSeries(dataTrueSeries);
         dataTrueSeries = new QSurface3DSeries;
         if (Xn >= 1000 || Yn >= 1000) { skipx = Xn / 100; skipy = Yn / 100; Xn = 100; Yn = 100; }
@@ -195,7 +195,7 @@ void MainWindow::showTrueGraph(){
         }
         dataTrueSeries->setItemLabelFormat("Solution 2N * 2M @xLabel @yLabel @zLabel");
     }
-    dataTrueSeries->setWireframeColor(QColor::fromString("#ff00ff"));
+    //dataTrueSeries->setWireframeColor(QColor::fromString("#ff00ff"));
     view->addSeries(dataTrueSeries);
     view->axisX()->setRange(a, b);
     view->axisZ()->setRange(c, d);
@@ -221,11 +221,11 @@ void MainWindow::showGraph() {
             slv.w = ww;
             prog = new ProgressWindow(&slv, this);
             prog->showWindow();
-            if (view->hasSeries(dataSeries))
+            if (view->hasContext())
                 removeGraph();
             solveInBackground(Xn, Yn, a, b, c, d, epsilon, maxN, v, vPhotos, z, zPhotos);
         }
-        else if (!view->hasSeries(dataSeries)) {
+        else if (!view->hasContext()) {
             drawGraph();
         }
         else return;
@@ -244,11 +244,11 @@ void MainWindow::showGraph() {
             prog2 = new ProgressWindow(&slv2, this);
             prog2->closeWindow();
             prog->showWindow();
-            if (view->hasSeries(dataSeries))
+            if (view->hasContext())
                 removeGraph();
             solveInBackground(Xn, Yn, a, b, c, d, epsilon, maxN, v, vPhotos, epsilon2, maxN2, v2, v2Photos);
         }
-        else if (!view->hasSeries(dataSeries)) {
+        else if (!view->hasContext()) {
             drawGraph();
         }
         else return;
@@ -281,7 +281,7 @@ void MainWindow::drawGraph(){
     }
     dataSeries->setItemLabelFormat("Solution @xLabel @yLabel @zLabel");
     dataSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
-    dataSeries->setWireframeColor(QColor::fromString("#daa520"));
+    //dataSeries->setWireframeColor(QColor::fromString("#daa520"));
     //dataSeries->setTextureFile("iceberg.jpg");
     dataSeries->setBaseColor(QColor(0, 0, 255, 255));
     view->addSeries(dataSeries);
@@ -344,7 +344,7 @@ void MainWindow::handleSolveFinished(){
         }
         dataSeries->setItemLabelFormat("Solution @xLabel @yLabel @zLabel");
         dataSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
-        dataSeries->setWireframeColor(QColor::fromString("#daa520"));
+        //dataSeries->setWireframeColor(QColor::fromString("#daa520"));
         //dataSeries->setTextureFile("iceberg.jpg");
         view->addSeries(dataSeries);
         view->axisX()->setRange(a, b);
@@ -372,7 +372,7 @@ void MainWindow::handleSolveFinished(){
             }
             dataSeries->setItemLabelFormat("Solution @xLabel @yLabel @zLabel");
             dataSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
-            dataSeries->setWireframeColor(QColor::fromString("#daa520"));
+            //dataSeries->setWireframeColor(QColor::fromString("#daa520"));
             //dataSeries->setTextureFile("iceberg.jpg");
             view->addSeries(dataSeries);
             view->axisX()->setRange(a, b);
@@ -399,7 +399,7 @@ void MainWindow::handleSolveFinished(){
                     iterations[t]->setFlatShadingEnabled(false);
                     iterations[t]->setItemLabelFormat("Solution @xLabel @yLabel @zLabel");
                     iterations[t]->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
-                    iterations[t]->setWireframeColor(QColor::fromString("#daa520"));
+                    //iterations[t]->setWireframeColor(QColor::fromString("#daa520"));
                 }
             } else
                 slider->setDisabled(true);
@@ -425,7 +425,7 @@ void MainWindow::handleSolveFinished(){
                     iterations2[t]->setFlatShadingEnabled(false);
                     iterations2[t]->setItemLabelFormat("Solution 2 @xLabel @yLabel @zLabel");
                     iterations2[t]->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
-                    iterations2[t]->setWireframeColor(QColor::fromString("#ff00ff"));
+                    //iterations2[t]->setWireframeColor(QColor::fromString("#ff00ff"));
                 }
             } else
                 slider->setDisabled(true);
@@ -445,7 +445,7 @@ void MainWindow::handleSolveFinished(){
 }
 
 void MainWindow::removeGraph(){
-    if (view->hasSeries(dataSeries)) view->removeSeries(dataSeries);
+    if (view->hasContext()) view->removeSeries(dataSeries);
     for (auto it : view->seriesList()) {
         if (it == dataTrueSeries || it == dataPSeries)
             continue;
@@ -455,11 +455,11 @@ void MainWindow::removeGraph(){
 }
 
 void MainWindow::removeTrueGraph(){
-    if (view->hasSeries(dataTrueSeries)) view->removeSeries(dataTrueSeries);
+    if (view->hasContext()) view->removeSeries(dataTrueSeries);
 }
 
 void MainWindow::removePGraph(){
-    if (view->hasSeries(dataPSeries)) view->removeSeries(dataPSeries);
+    if (view->hasContext()) view->removeSeries(dataPSeries);
 }
 
 void MainWindow::onRadioButtonClicked(){
@@ -488,7 +488,7 @@ void MainWindow::setT(int t){
 }
 
 void MainWindow::showTable() {
-    if (!view->hasSeries(dataSeries)) return;
+    if (!view->hasContext()) return;
     int skipx = 1;
     int skipy = 1;
     int Xn = slv.N;
@@ -661,7 +661,7 @@ void MainWindow::showPGraph(){
         if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww || selectedMeth != slv.meth) {
             return;
         }
-        else if (!view->hasSeries(dataPSeries)) {
+        else if (!view->hasContext()) {
         }
         else return;
 
@@ -680,7 +680,7 @@ void MainWindow::showPGraph(){
         }
         dataPSeries->setItemLabelFormat("solution @xLabel @yLabel @zLabel");
         dataPSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
-        dataPSeries->setWireframeColor(QColor::fromString("#daf520"));
+        //dataPSeries->setWireframeColor(QColor::fromString("#daf520"));
         view->addSeries(dataPSeries);
         view->axisX()->setRange(a, b);
         view->axisZ()->setRange(c, d);
@@ -690,7 +690,7 @@ void MainWindow::showPGraph(){
         if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww || selectedMeth != slv.meth || epsilon2 != slv2.epsilon || slv2.w != ww2 || maxN2 != slv2.max_it) {
             return;
         }
-        else if (!view->hasSeries(dataPSeries)) {
+        else if (!view->hasContext()) {
         }
         else return;
 
@@ -709,7 +709,7 @@ void MainWindow::showPGraph(){
         }
         dataPSeries->setItemLabelFormat("solution @xLabel @yLabel @zLabel");
         dataPSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
-        dataPSeries->setWireframeColor(QColor::fromString("#daf520"));
+        //dataPSeries->setWireframeColor(QColor::fromString("#daf520"));
         view->addSeries(dataPSeries);
         view->axisX()->setRange(a, b);
         view->axisZ()->setRange(c, d);

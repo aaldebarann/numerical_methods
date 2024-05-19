@@ -10,13 +10,14 @@ typedef double type_d;
 namespace u_test {
 type_d u(type_d x, type_d y);
 
-type_d u0y(type_d y);
-
-type_d u1y(type_d y);
-
+type_d uy0(type_d y);
+type_d uy1(type_d y);
 type_d ux0(type_d x);
-
 type_d ux1(type_d x);
+
+
+type_d uycut(type_d y);
+type_d uxcut(type_d x);
 
 type_d f(type_d x, type_d y);
 }
@@ -24,9 +25,9 @@ type_d f(type_d x, type_d y);
 namespace u_main {
 type_d u(type_d x, type_d y);
 
-type_d u0y(type_d y);
+type_d uy0(type_d y);
 
-type_d u1y(type_d y);
+type_d uy1(type_d y);
 
 type_d ux0(type_d x);
 
@@ -69,8 +70,8 @@ public:
 class solver : public QObject {
     Q_OBJECT
 
-    type_d (*u0y)(type_d);
-    type_d (*u1y)(type_d);
+    type_d (*uy0)(type_d);
+    type_d (*uy1)(type_d);
     type_d (*ux0)(type_d);
     type_d (*ux1)(type_d);
     type_d (*f)(type_d x, type_d y);
@@ -84,6 +85,7 @@ class solver : public QObject {
     void calc_r(Matrix& v);
 
     void prepare(Matrix& v, Matrix& z, type_d a, type_d c);
+    void prepareCut(Matrix& v, Matrix& z, type_d a, type_d c);
     void prepare(Matrix& v, type_d a, type_d c);
 
     void step(Matrix& v, Matrix& z, type_d a, type_d c, type_d& mz, type_d& acc) ;
@@ -97,6 +99,7 @@ class solver : public QObject {
 
 public:
     int N, M, max_it, it, task;
+    static double xCut, yCut;
     int interval = 1000;
     int meth = Methods::zeidel;
     type_d x0, X, y0, Y, k, h, hor, ver, A, max_z, achieved_accuracy, max_r, epsilon, max_x, max_y;

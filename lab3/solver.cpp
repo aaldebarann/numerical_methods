@@ -8,31 +8,35 @@ type_d u_test::u(type_d x, type_d y) {
     return exp(sin(pi * x * y) * sin(pi * x * y));
 }
 
-type_d u_test::u0y(type_d y) {
+type_d u_test::uy0(type_d y) {
     return 1;
 }
-
-type_d u_test::u1y(type_d y) {
+type_d u_test::uy1(type_d y) {
     return exp(sin(pi * y) * sin(pi * y));
 }
-
 type_d u_test::ux0(type_d x) {
     return 1;
 }
-
 type_d u_test::ux1(type_d x) {
     return exp(sin(pi * x) * sin(pi * x));
 }
-
+/*
+type_d u_test::uxcut(type_d x) {
+    return exp(sin(pi * x * solver::yCut) * sin(pi * x * solver::yCut));
+}
+type_d u_test::uycut(type_d y) {
+    return exp(sin(pi * y * solver::xCut) * sin(pi * y * solver::xCut));
+}
+*/
 type_d u_test::f(type_d x, type_d y) {
     return u(x, y) * pi * pi * (x * x + y * y) * (- 1 - 4 * cos(2 * pi * x * y) + cos(4 * pi * x * y)) / 2;
 }
 
-type_d u_main::u0y(type_d y) {
+type_d u_main::uy0(type_d y) {
     return sin(pi * y);
 }
 
-type_d u_main::u1y(type_d y) {
+type_d u_main::uy1(type_d y) {
     return sin(pi * y);
 }
 
@@ -59,8 +63,8 @@ void solver::constructor() {
     Y = 0;
     task = Functions::test;
 
-    u0y = u_test::u0y;
-    u1y = u_test::u1y;
+    uy0 = u_test::uy0;
+    uy1 = u_test::uy1;
     ux0 = u_test::ux0;
     ux1 = u_test::ux1;
     u = u_test::u;
@@ -78,8 +82,8 @@ void solver::constructor(int function) {
     Y = 0;
 
     if (function == Functions::test) {
-        u0y = u_test::u0y;
-        u1y = u_test::u1y;
+        uy0 = u_test::uy0;
+        uy1 = u_test::uy1;
         ux0 = u_test::ux0;
         ux1 = u_test::ux1;
         u = u_test::u;
@@ -87,8 +91,8 @@ void solver::constructor(int function) {
         task = Functions::test;
     }
     else if (function == Functions::tmain) {
-        u0y = u_main::u0y;
-        u1y = u_main::u1y;
+        uy0 = u_main::uy0;
+        uy1 = u_main::uy1;
         ux0 = u_main::ux0;
         ux1 = u_main::ux1;
         f = u_main::f;
@@ -107,8 +111,8 @@ void solver::prepare(Matrix& v, Matrix& z, type_d a, type_d c) {
     }
 
     for (int i = 0; i < M + 1; i++) {
-        v(0, i) = u0y(c + k * i);
-        v(N, i) = u1y(c + k * i);
+        v(0, i) = uy0(c + k * i);
+        v(N, i) = uy1(c + k * i);
     }
 
     for (int i = 1; i < N; i++)
@@ -129,8 +133,8 @@ void solver::prepare(Matrix& v, type_d a, type_d c) {
     }
 
     for (int i = 1; i < M + 1; i++) {
-        v(0, i) = u0y(c + k * i);
-        v(N, i) = u1y(c + k * i);
+        v(0, i) = uy0(c + k * i);
+        v(N, i) = uy1(c + k * i);
     }
 
     for (int i = 1; i < N; i++)
@@ -186,12 +190,20 @@ void solver::step(Matrix& v, type_d a, type_d c, type_d& acc) {
 void solver::step_mvr(Matrix& v, Matrix& z, type_d a, type_d c, type_d& mz, type_d& acc) {
     //mvr
 
+    omp_lock_t accuracyLock;
+    omp_init_lock(&accuracyLock);
+
     it++;
     type_d max_z = 0;
     type_d accuracy = 0;
     type_d last_v;
-    for (int i = 1; i < N; i++)
-        for (int j = 1; j < M; j++) {
+    type_d localAcc, localMaxZ;
+    int i, j;
+#pragma omp parallel for private(i, j, last_v, localAcc, localMaxZ)
+    for (i = 1; i < N; i++) {
+        localAcc = 0;
+        localMaxZ = 0;
+        for (j = 1; j < M; j++) {
             last_v = v(i, j);
             v(i, j) = (- w * f(a + h * i, c + k * j)
                        - w * hor * v(i - 1, j)
@@ -199,13 +211,19 @@ void solver::step_mvr(Matrix& v, Matrix& z, type_d a, type_d c, type_d& mz, type
                        - w * ver * v(i, j - 1)
                        - w * ver * v(i, j + 1)
                        +(1 - w) * A * last_v) / A;
-            if (abs(last_v - v(i, j)) > accuracy)
-                accuracy = abs(last_v - v(i, j));
+            if (abs(last_v - v(i, j)) > localAcc)
+                localAcc = abs(last_v - v(i, j));
             z(i, j) = abs(v(i, j) - u(a + i * h, c + j * k));
-            if (z(i, j) > max_z)
-                max_z = z(i, j);
+            if (z(i, j) > localMaxZ)
+                localMaxZ = z(i, j);
         }
-
+        omp_set_lock(&accuracyLock);
+        if(accuracy < localAcc)
+            accuracy = localAcc;
+        if(max_z < localMaxZ)
+            max_z = localMaxZ;
+        omp_unset_lock(&accuracyLock);
+    }
     mz = max_z;
     acc = accuracy;
 }

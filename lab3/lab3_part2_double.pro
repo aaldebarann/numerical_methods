@@ -4,6 +4,10 @@ INCLUDEPATH += C:/Users/icezg/Downloads/boost_1_83_0
 LIBS += "-LC:/Users/icezg/Downloads/boost_1_83_0/stage/lib/"
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000
 
+LIBS += "-fopenmp"
+
+QMAKE_CXXFLAGS += "-fopenmp"
+
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
