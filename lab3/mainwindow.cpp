@@ -22,16 +22,16 @@ MainWindow::MainWindow(QWidget* parent)
     QVBoxLayout *controlLayout = new QVBoxLayout(controlsWidget);
 
     xn = new QLineEdit(this);
-    xn->setText("3");
+    xn->setText("128");
     QLabel* label1 = new QLabel("Разбиений по x:", controlsWidget);
     yn = new QLineEdit(this);
-    yn->setText("3");
+    yn->setText("128");
     QLabel* label2 = new QLabel("Разбиений по y:", controlsWidget);
     eps = new QLineEdit(this);
-    eps->setText("0.001");
+    eps->setText("0.0001");
     QLabel* label3 = new QLabel("Контроль точности ε:", controlsWidget);
     maxsteps = new QLineEdit(this);
-    maxsteps->setText("10000");
+    maxsteps->setText("2000");
     QLabel* label4 = new QLabel("Макс. число шагов:", controlsWidget);
     w = new QLineEdit(this);
     w->setText("1.5");
@@ -466,6 +466,7 @@ void MainWindow::onRadioButtonClicked(){
     QRadioButton *selectedButton = qobject_cast<QRadioButton*>(sender());
     if (selectedButton->text() == "Зейдель") {
         selectedMeth = Methods::zeidel;
+        selectedMeth = Methods::mvr;
     } else if (selectedButton->text() == "МВР") {
         selectedMeth = Methods::mvr;
     } else if (selectedButton->text() == "Тестовая") {

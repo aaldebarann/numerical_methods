@@ -15,9 +15,8 @@ type_d uy1(type_d y);
 type_d ux0(type_d x);
 type_d ux1(type_d x);
 
-
-type_d uycut(type_d y);
-type_d uxcut(type_d x);
+type_d ux_border(type_d x);
+type_d uy_border(type_d y);
 
 type_d f(type_d x, type_d y);
 }
@@ -85,7 +84,9 @@ class solver : public QObject {
     void calc_r(Matrix& v);
 
     void prepare(Matrix& v, Matrix& z, type_d a, type_d c);
-    void prepareCut(Matrix& v, Matrix& z, type_d a, type_d c);
+    void prepare(Matrix& v, Matrix& z, type_d a, type_d b, type_d c, type_d d);
+    void prepareP(Matrix& v, Matrix& z, type_d a, type_d b, type_d c, type_d d);
+
     void prepare(Matrix& v, type_d a, type_d c);
 
     void step(Matrix& v, Matrix& z, type_d a, type_d c, type_d& mz, type_d& acc) ;
@@ -98,10 +99,11 @@ class solver : public QObject {
     void copy(Matrix& v1, Matrix& v2);
 
 public:
-    int N, M, max_it, it, task;
-    static double xCut, yCut;
+    int N, M, P, Q, max_it, it, task;
+    static type_d xCut, yCut;
+
     int interval = 1000;
-    int meth = Methods::zeidel;
+    int meth = Methods::mvr;
     type_d x0, X, y0, Y, k, h, hor, ver, A, max_z, achieved_accuracy, max_r, epsilon, max_x, max_y;
     bool valid = 0;
     type_d w = type_d(1.5);

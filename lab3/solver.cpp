@@ -1,6 +1,7 @@
 #include "solver.h"
 
 //constexpr type_d pi = 3.14159265358979323846264338327950288Q;
+type_d solver::xCut, solver::yCut;
 
 constexpr type_d pi = 3.14159265358979323846264338327950288L;
 
@@ -20,14 +21,16 @@ type_d u_test::ux0(type_d x) {
 type_d u_test::ux1(type_d x) {
     return exp(sin(pi * x) * sin(pi * x));
 }
-/*
-type_d u_test::uxcut(type_d x) {
-    return exp(sin(pi * x * solver::yCut) * sin(pi * x * solver::yCut));
+
+type_d u_test::ux_border(type_d x) {
+    type_d y = (x >= solver::xCut) ? solver::yCut : 1;
+    return exp(sin(pi * x * y) * sin(pi * x * y));
 }
-type_d u_test::uycut(type_d y) {
-    return exp(sin(pi * y * solver::xCut) * sin(pi * y * solver::xCut));
+type_d u_test::uy_border(type_d y) {
+    type_d x = (y >= solver::yCut) ? solver::xCut : 1;
+    return exp(sin(pi * x * y) * sin(pi * x * y));
 }
-*/
+
 type_d u_test::f(type_d x, type_d y) {
     return u(x, y) * pi * pi * (x * x + y * y) * (- 1 - 4 * cos(2 * pi * x * y) + cos(4 * pi * x * y)) / 2;
 }
@@ -123,6 +126,60 @@ void solver::prepare(Matrix& v, Matrix& z, type_d a, type_d c) {
         for (int j = 0; j < M + 1; j++)
             z(i, j) = 0;
 }
+void solver::prepare(Matrix& v, Matrix& z, type_d a, type_d b, type_d c, type_d d) {
+    v.resize(N + 1, M + 1);
+    z.resize(N + 1, M + 1);
+
+    for (int i = 0; i < N + 1; i++) {
+        v(i, 0) = u(a + h * i, c);
+        v(i, M) = u(a + h * i, d);
+    }
+
+    for (int i = 0; i < M + 1; i++) {
+        v(0, i) = u(a, c + k * i);
+        v(N, i) = u(b, c + k * i);
+    }
+
+    for (int i = 1; i < N; i++)
+        for (int j = 1; j < M; j++)
+            v(i, j) = u(a + h * i, c) + k * j * (u(a + h * i, d) - u(a + h * i, c));
+
+    for (int i = 0; i < N + 1; i++)
+        for (int j = 0; j < M + 1; j++)
+            z(i, j) = 0;
+}
+void solver::prepareP(Matrix& v, Matrix& z, type_d a, type_d b, type_d c, type_d d) {
+    v.resize(N + 1, M + 1);
+    z.resize(N + 1, M + 1);
+
+    for (int i = 0; i < N + 1; i++) {
+        v(i, 0) = ux0(a + h * i);
+        int M__ = (i >= P) ? Q: M;
+        v(i, M__) = u(a + h * i, c + k * M__);
+    }
+
+    for (int j = 0; j < M + 1; j++) {
+        v(0, j) = uy0(c + k * j);
+        int N__ = (j >= Q) ? P: N;
+        v(N__, j) = u(a + h * N__, c + k * j);
+    }
+
+    for (int i = 1; i < N; i++)
+        for (int j = 1; j < M; j++) {
+            int M__ = (i >= P) ? Q: M;
+            int N__ = (j >= Q) ? P: N;
+            if(i >= N__ || j >= M__)
+                break;
+            v(j, j) = 0;
+            //v(i, j) = ux0(a + h * i) + k * j * (u(a + h * i, c + k * M__) - ux0(a + h * i));
+    }
+
+    v(P, Q) = u(a + h * P, c + k * Q);
+
+    for (int i = 0; i < N + 1; i++)
+        for (int j = 0; j < M + 1; j++)
+            z(i, j) = 0;
+}
 
 void solver::prepare(Matrix& v, type_d a, type_d c) {
     v.resize(N + 1, M + 1);
@@ -200,10 +257,60 @@ void solver::step_mvr(Matrix& v, Matrix& z, type_d a, type_d c, type_d& mz, type
     type_d localAcc, localMaxZ;
     int i, j;
 #pragma omp parallel for private(i, j, last_v, localAcc, localMaxZ)
-    for (i = 1; i < N; i++) {
+    for (i = 1; i < P; i++) {
         localAcc = 0;
         localMaxZ = 0;
-        for (j = 1; j < M; j++) {
+        for (j = 1; j < Q; j++) {
+            last_v = v(i, j);
+            v(i, j) = (- w * f(a + h * i, c + k * j)
+                       - w * hor * v(i - 1, j)
+                       - w * hor * v(i + 1, j)
+                       - w * ver * v(i, j - 1)
+                       - w * ver * v(i, j + 1)
+                       +(1 - w) * A * last_v) / A;
+            if (abs(last_v - v(i, j)) > localAcc)
+                localAcc = abs(last_v - v(i, j));
+            z(i, j) = abs(v(i, j) - u(a + i * h, c + j * k));
+            if (z(i, j) > localMaxZ)
+                localMaxZ = z(i, j);
+        }
+        omp_set_lock(&accuracyLock);
+        if(accuracy < localAcc)
+            accuracy = localAcc;
+        if(max_z < localMaxZ)
+            max_z = localMaxZ;
+        omp_unset_lock(&accuracyLock);
+    }
+#pragma omp parallel for private(i, j, last_v, localAcc, localMaxZ)
+    for (i = P; i < N; i++) {
+        localAcc = 0;
+        localMaxZ = 0;
+        for (j = 1; j < Q; j++) {
+            last_v = v(i, j);
+            v(i, j) = (- w * f(a + h * i, c + k * j)
+                       - w * hor * v(i - 1, j)
+                       - w * hor * v(i + 1, j)
+                       - w * ver * v(i, j - 1)
+                       - w * ver * v(i, j + 1)
+                       +(1 - w) * A * last_v) / A;
+            if (abs(last_v - v(i, j)) > localAcc)
+                localAcc = abs(last_v - v(i, j));
+            z(i, j) = abs(v(i, j) - u(a + i * h, c + j * k));
+            if (z(i, j) > localMaxZ)
+                localMaxZ = z(i, j);
+        }
+        omp_set_lock(&accuracyLock);
+        if(accuracy < localAcc)
+            accuracy = localAcc;
+        if(max_z < localMaxZ)
+            max_z = localMaxZ;
+        omp_unset_lock(&accuracyLock);
+    }
+#pragma omp parallel for private(i, j, last_v, localAcc, localMaxZ)
+    for (i = 1; i < P; i++) {
+        localAcc = 0;
+        localMaxZ = 0;
+        for (j = Q; j < M; j++) {
             last_v = v(i, j);
             v(i, j) = (- w * f(a + h * i, c + k * j)
                        - w * hor * v(i - 1, j)
@@ -283,6 +390,10 @@ Q_INVOKABLE void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_
     timer.start();
     N = n;
     M = m;
+    P = N / 2;
+    Q = M / 2;
+    xCut = (a + b) / 2;
+    yCut = (c + d) / 2;
     x0 = a;
     X = b;
     y0 = c;
@@ -306,7 +417,8 @@ Q_INVOKABLE void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_
 
     int iter_size = 1;
 
-    prepare(v, z, a, c);
+    prepareP(v, z, a, b, c, d);
+    //prepareP(v, z, N, M, a, b, c, d, ux0, uy0, ux1, uy1);
     if (N < 100 && M < 100) {
         for(int i = 0; i < 10; i++) {
             vPhotos[i].resize(N + 1, M + 1);
@@ -318,7 +430,8 @@ Q_INVOKABLE void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_
     type_d last_mz;
     type_d last_accuracy = 0;
     int cur_photo = 1;
-
+    if(max_it == 0)
+        return;
     emit progressUpdate(0, 66, timer.elapsed(), 1);
     if (meth == Methods::zeidel){
         timer.start();
@@ -339,7 +452,6 @@ Q_INVOKABLE void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_
         cur_photo++;
 
         type_d cur_accuracy = last_accuracy;
-
         for (size_t i = 2; i < max_it && cur_accuracy > eps; i++) {
             step(v, z, a, c, last_mz, cur_accuracy);
             if(i % interval == 0){
@@ -470,6 +582,7 @@ Q_INVOKABLE void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_
     int cur_photo = 1;
 
     emit progressUpdate(0, 66, timer.elapsed(), 1);
+    meth = Methods::mvr;
     if (meth == Methods::zeidel){
         timer.start();
         step(v, a, c, last_accuracy);
@@ -577,7 +690,7 @@ Q_INVOKABLE void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_
 }
 
 inline int solver::is_border(int i, int j){
-    return ((i == 0) || (j == 0) || (i == N) || (j == M)) ? 1 : 0;
+    return ((i == 0) || (j == 0) || (i == N) || (j == M) || (i == P && j >= Q) || (j == Q && i >= P));
 }
 
 void solver::fill_right_side(Matrix& v, type_d a, type_d c){
