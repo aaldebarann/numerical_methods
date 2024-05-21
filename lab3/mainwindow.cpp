@@ -48,6 +48,12 @@ MainWindow::MainWindow(QWidget* parent)
     w2 = new QLineEdit(this);
     w2->setText("1.5");
     QLabel* label9 = new QLabel("Параметр ω2:", controlsWidget);
+    cutx = new QLineEdit(this);
+    cutx->setText("0.5");
+    QLabel* label10 = new QLabel("Координата x выреза:", controlsWidget);
+    cuty = new QLineEdit(this);
+    cuty->setText("0.5");
+    QLabel* label11 = new QLabel("Координата y выреза:", controlsWidget);
 
     QPushButton *graphButton = new QPushButton("Численное решение", this);
     QPushButton *trueGraphButton = new QPushButton("Аналитическое решение", this);
@@ -118,6 +124,10 @@ MainWindow::MainWindow(QWidget* parent)
     controlLayout->addWidget(maxsteps2);
     controlLayout->addWidget(label9);
     controlLayout->addWidget(w2);
+    controlLayout->addWidget(label10);
+    controlLayout->addWidget(cutx);
+    controlLayout->addWidget(label11);
+    controlLayout->addWidget(cuty);
     controlLayout->addWidget(graphButton);
     controlLayout->addWidget(trueGraphButton);
     controlLayout->addWidget(pGraphButton);
@@ -212,9 +222,12 @@ void MainWindow::showGraph() {
     type_d epsilon = eps->text().toDouble();
     type_d ww2 = w2->text().toDouble();
     type_d epsilon2 = eps2->text().toDouble();
+    type_d xCut = cutx->text().toDouble();
+    type_d yCut = cuty->text().toDouble();
     lastPlotButton = false;
     if (selectedTask == Functions::test){
-        if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww || selectedMeth != slv.meth || slv.interval != interval) {
+        if (Xn != slv.N || Yn != slv.M || maxN != slv.max_it || epsilon != slv.epsilon || selectedTask != slv.task || slv.w != ww ||
+                selectedMeth != slv.meth || slv.interval != interval || this->xCut != xCut || this->yCut != yCut) {
             slv.task = selectedTask;
             slv.meth = selectedMeth;
             slv.interval = interval;
@@ -223,7 +236,7 @@ void MainWindow::showGraph() {
             prog->showWindow();
             if (view->hasContext())
                 removeGraph();
-            solveInBackground(Xn, Yn, a, b, c, d, epsilon, maxN, v, vPhotos, z, zPhotos);
+            solveInBackground(Xn, Yn, a, b, c, d, epsilon, maxN, v, vPhotos, z, zPhotos, xCut, yCut);
         }
         else if (!view->hasContext()) {
             drawGraph();
@@ -293,24 +306,45 @@ void MainWindow::drawGraph(){
 }
 
 void MainWindow::handleSolveFinished(){
+    qDebug() << "handle starts";
+    try {
     int Xn = slv.N;
     int Yn = slv.M;
     int skipx = 1;
     int skipy = 1;
     if (slv.task == Functions::test) {
         dataSeries = new QSurface3DSeries;
-        if (Xn >= 1000 || Yn >= 1000) { skipx = Xn / 100; skipy = Yn / 100; Xn = 100; Yn = 100; }
-        if (Xn < 100 && Yn < 100)
+        dataSeries2 = new QSurface3DSeries;
+        int P = slv.P;
+        int Q = slv.Q;
+        if (Xn >= 1000 || Yn >= 1000) {
+            skipx = Xn / 100; skipy = Yn / 100; Xn = 100; Yn = 100;
+            P = (int)(100 * (xCut - a) / (b - a));
+            Q = (int)(100 * (yCut - c) / (d - c));
+        }
+        if (Xn < 100 && Yn < 100) {
             dataSeries->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
-        else
+            dataSeries2->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
+        } else {
             dataSeries->setDrawMode(QSurface3DSeries::DrawSurface);
-        for (int j = 0; j <= Yn; j++) {
+            dataSeries2->setDrawMode(QSurface3DSeries::DrawSurface);
+        }
+        for (int j = 0; j <= Q; j++) {
             QSurfaceDataRow* row = new QSurfaceDataRow;
             for (int i = 0; i <= Xn; i++) {
                 row->append(QSurfaceDataItem(QVector3D(a + slv.h * i * skipx, v(i  * skipx, j * skipy), c + slv.k * j * skipy)));
             }
             dataSeries->dataProxy()->addRow(row);
         }
+        for (int j = Q; j <= Yn; j++) {
+            QSurfaceDataRow* row = new QSurfaceDataRow;
+            for (int i = 0; i <= P; i++) {
+                row->append(QSurfaceDataItem(QVector3D(a + slv.h * i * skipx, v(i  * skipx, j * skipy), c + slv.k * j * skipy)));
+            }
+            dataSeries2->dataProxy()->addRow(row);
+        }
+
+        /*
         if (Xn < 100 && Yn < 100) {
             slider->setEnabled(true);
             for(size_t i = 0; i < 10; i++){
@@ -333,8 +367,12 @@ void MainWindow::handleSolveFinished(){
         } else {
             slider->setDisabled(true);
         }
+        */
+        slider->setDisabled(true);
         for (int j = 0; j <= slv.M; j++) {
             for (int i = 0; i <= slv.N; i++) {
+                if(i > slv.P && j > slv.Q)
+                    break;
                 if(abs(v(i , j) - u_test::u(a + slv.h * i, c + slv.k * j)) >= slv.max_z){
                     slv.max_z = abs(v(i , j) - u_test::u(a + slv.h * i, c + slv.k * j));
                     slv.max_x = a + slv.h * i;
@@ -343,10 +381,17 @@ void MainWindow::handleSolveFinished(){
             }
         }
         dataSeries->setItemLabelFormat("Solution @xLabel @yLabel @zLabel");
-        dataSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
-        //dataSeries->setWireframeColor(QColor::fromString("#daa520"));
+        //dataSeries->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
+        dataSeries->setBaseColor(QColor::fromRgb(218, 165, 32));
         //dataSeries->setTextureFile("iceberg.jpg");
         view->addSeries(dataSeries);
+        //dataSeries2->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
+        //dataSeries->setWireframeColor(QColor::fromString("#daa520"));
+        //dataSeries->setTextureFile("iceberg.jpg");
+        dataSeries2->setItemLabelFormat("Solution @xLabel @yLabel @zLabel");
+        //dataSeries2->setColorStyle(Q3DTheme::ColorStyleObjectGradient);
+        dataSeries2->setBaseColor(QColor::fromRgb(218, 165, 32));
+        view->addSeries(dataSeries2);
         view->axisX()->setRange(a, b);
         view->axisZ()->setRange(c, d);
         view->axisY()->setRange(-1, 1);
@@ -442,6 +487,11 @@ void MainWindow::handleSolveFinished(){
             prog2->closeWindow();
         }
     }
+    } catch (const std::exception& e) {
+        qDebug() << "exception";
+        qDebug() << e.what();
+    }
+    qDebug() << "handle ends";
 }
 
 void MainWindow::removeGraph(){
@@ -519,38 +569,56 @@ void MainWindow::showTable() {
     if (slv.task == Functions::test) {
         for (int i = 0; i <= Xn; i++) {
             for (int j = 0; j <= Yn; j++) {
-                tableWidget1->setItem(j, i, new QTableWidgetItem(QString::number(u_test::u(a + slv.h * i * skipx, c + slv.k * j * skipy))));
+                if(i >= slv.P + 1 && j >= slv.Q + 1)
+                    tableWidget1->setItem(j, i, new QTableWidgetItem(""));
+                else
+                    tableWidget1->setItem(j, i, new QTableWidgetItem(QString::number(u_test::u(a + slv.h * i * skipx, c + slv.k * j * skipy))));
             }
         }
         tabWidget->addTab(tableWidget1, "Значения точного решения");
         for (int i = 0; i <= Xn; i++) {
             for (int j = 0; j <= Yn; j++) {
-                tableWidget2->setItem(j, i, new QTableWidgetItem(QString::number(v(i  * skipx, j * skipy))));
+                if(i >= slv.P + 1 && j >= slv.Q + 1)
+                    tableWidget2->setItem(j, i, new QTableWidgetItem(""));
+                else
+                    tableWidget2->setItem(j, i, new QTableWidgetItem(QString::number(v(i  * skipx, j * skipy))));
             }
         }
         tabWidget->addTab(tableWidget2, "Значения численного решения");
         for (int i = 0; i <= Xn; i++) {
             for (int j = 0; j <= Yn; j++) {
-                tableWidget3->setItem(j, i, new QTableWidgetItem(QString::number(z(i * skipx, j * skipy))));
+                if(i >= slv.P + 1 && j >= slv.Q + 1)
+                    tableWidget3->setItem(j, i, new QTableWidgetItem(""));
+                else
+                    tableWidget3->setItem(j, i, new QTableWidgetItem(QString::number(z(i * skipx, j * skipy))));
             }
         }
         tabWidget->addTab(tableWidget3, "Значения погрешности");
     } else {
         for (int i = 0; i <= Xn; i++) {
             for (int j = 0; j <= Yn; j++) {
-                tableWidget1->setItem(j, i, new QTableWidgetItem(QString::number(v(i  * skipx, j * skipy))));
+                if(i >= slv.P + 1 && j >= slv.Q + 1)
+                    tableWidget1->setItem(j, i, new QTableWidgetItem(""));
+                else
+                    tableWidget1->setItem(j, i, new QTableWidgetItem(QString::number(v(i  * skipx, j * skipy))));
             }
         }
         tabWidget->addTab(tableWidget1, "Значения численного решения v");
         for (int i = 0; i <= Xn; i++) {
-            for (int j = 0; j <= Yn; j++) {
-                tableWidget2->setItem(j, i, new QTableWidgetItem(QString::number(v2(2 * i * skipx, 2 * j * skipy))));
+            for (int j = 0; j <= Yn; j++) {                
+                if(i >= slv.P + 1 && j >= slv.Q + 1)
+                    tableWidget2->setItem(j, i, new QTableWidgetItem(""));
+                else
+                    tableWidget2->setItem(j, i, new QTableWidgetItem(QString::number(v2(2 * i * skipx, 2 * j * skipy))));
             }
         }
         tabWidget->addTab(tableWidget2, "Значения численного решения v2");
         for (int i = 0; i <= Xn; i++) {
             for (int j = 0; j <= Yn; j++) {
-                tableWidget3->setItem(j, i, new QTableWidgetItem(QString::number(abs(v(i  * skipx, j * skipy) - v2(2 * i * skipx, 2 * j * skipy)))));
+                if(i >= slv.P + 1 && j >= slv.Q + 1)
+                    tableWidget3->setItem(j, i, new QTableWidgetItem(""));
+                else
+                    tableWidget3->setItem(j, i, new QTableWidgetItem(QString::number(abs(v(i  * skipx, j * skipy) - v2(2 * i * skipx, 2 * j * skipy)))));
             }
         }
         tabWidget->addTab(tableWidget3, "Значения разности v - v2");
@@ -720,17 +788,32 @@ void MainWindow::showPGraph(){
 
 void MainWindow::solveInBackground(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it,
                                    Matrix& v, std::vector<Matrix>& vPhotos,
-                                   Matrix& z, std::vector<Matrix>& zPhotos) {
+                                   Matrix& z, std::vector<Matrix>& zPhotos,
+                                   type_d xCut, type_d yCut) {
+    /*
     QThread* thread = new QThread();
     slv.moveToThread(thread);
-    connect(thread, &QThread::started, &slv, [this, n, m, a, b, c, d, eps, m_it, &v, &vPhotos, &z, &zPhotos]() {
-        slv.solve(n, m, a, b, c, d, eps, m_it, v, vPhotos, z, zPhotos);
+    connect(thread, &QThread::started, &slv, [this, n, m, a, b, c, d, eps, m_it, &v,
+            &vPhotos, &z, &zPhotos, xCut, yCut]() {
+        qDebug() << "lambda starts";
+        slv.solve(n, m, a, b, c, d, eps, m_it, v, vPhotos, z, zPhotos, xCut, yCut);
         slv.moveToThread(this->thread());
         handleSolveFinished();
+        qDebug() << "lambda ends";
     });
     connect(this, &MainWindow::solverFinished2, thread, &QThread::quit);
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
     thread->start();
+    */
+    this->xCut = xCut;
+    this->yCut = yCut;
+    qDebug() << "lambda starts";
+    int p = (int)((xCut - a) / (b - a) * n);
+    int q = (int)((yCut - c) / (d - c) * m);
+    qDebug() << p << q;
+    slv.solve(n, m, a, b, c, d, eps, m_it, v, vPhotos, z, zPhotos, p, q);
+    handleSolveFinished();
+    qDebug() << "lambda ends";
 }
 
 void MainWindow::solveInBackground(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it,

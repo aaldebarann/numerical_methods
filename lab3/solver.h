@@ -100,7 +100,6 @@ class solver : public QObject {
 
 public:
     int N, M, P, Q, max_it, it, task;
-    static type_d xCut, yCut;
 
     int interval = 1000;
     int meth = Methods::mvr;
@@ -121,7 +120,8 @@ public:
 public slots:
     Q_INVOKABLE void solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it,
                            Matrix & v, std::vector<Matrix>& vHistory,
-                           Matrix & z, std::vector<Matrix>& zHistory);
+                           Matrix & z, std::vector<Matrix>& zHistory,
+                           int p, int q);
     Q_INVOKABLE void solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps,int m_it,
                            Matrix & v, std::vector<Matrix>& vHistory);
 signals:

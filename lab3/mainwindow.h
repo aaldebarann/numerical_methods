@@ -79,12 +79,15 @@ public:
     QLineEdit *maxsteps2;
     QLineEdit *w2;
     QLineEdit *intervals;
+    QLineEdit *cutx;
+    QLineEdit *cuty;
     QLabel* summary;
     QSlider *slider;
     QLabel *valueLabel;
     QSurface3DSeries *iterations[10];
     QSurface3DSeries *iterations2[10];
     QSurface3DSeries *dataSeries = nullptr;
+    QSurface3DSeries *dataSeries2 = nullptr;
     QSurface3DSeries *dataPSeries = nullptr;
     QSurface3DSeries *dataTrueSeries = nullptr;
     ProgressWindow *prog = nullptr;
@@ -100,6 +103,7 @@ public:
     std::vector<Matrix> zPhotos;
 
     type_d a, b, c, d;
+    type_d xCut, yCut;
     int selectedTask = Functions::test;
     int selectedMeth = 0;
     bool activePlot{false};
@@ -122,7 +126,9 @@ public slots:
     void setT(int t);
     void onRadioButtonClicked();
     void solveInBackground(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it,
-                           Matrix& v, std::vector<Matrix>& vPhotos, Matrix& z, std::vector<Matrix>& zPhotos);
+                           Matrix& v, std::vector<Matrix>& vPhotos, Matrix& z,
+                           std::vector<Matrix>& zPhotos,
+                           type_d xCut, type_d yCut);
     void solveInBackground(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it,
                            Matrix& v, std::vector<Matrix>& vPhotos, type_d eps2, int m_it2,
                            Matrix& v2, std::vector<Matrix>& v2Photos);

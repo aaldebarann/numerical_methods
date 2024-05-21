@@ -1,7 +1,7 @@
 #include "solver.h"
+#include <QObject>
 
 //constexpr type_d pi = 3.14159265358979323846264338327950288Q;
-type_d solver::xCut, solver::yCut;
 
 constexpr type_d pi = 3.14159265358979323846264338327950288L;
 
@@ -21,7 +21,7 @@ type_d u_test::ux0(type_d x) {
 type_d u_test::ux1(type_d x) {
     return exp(sin(pi * x) * sin(pi * x));
 }
-
+/*
 type_d u_test::ux_border(type_d x) {
     type_d y = (x >= solver::xCut) ? solver::yCut : 1;
     return exp(sin(pi * x * y) * sin(pi * x * y));
@@ -30,7 +30,7 @@ type_d u_test::uy_border(type_d y) {
     type_d x = (y >= solver::yCut) ? solver::xCut : 1;
     return exp(sin(pi * x * y) * sin(pi * x * y));
 }
-
+*/
 type_d u_test::f(type_d x, type_d y) {
     return u(x, y) * pi * pi * (x * x + y * y) * (- 1 - 4 * cos(2 * pi * x * y) + cos(4 * pi * x * y)) / 2;
 }
@@ -152,33 +152,97 @@ void solver::prepareP(Matrix& v, Matrix& z, type_d a, type_d b, type_d c, type_d
     v.resize(N + 1, M + 1);
     z.resize(N + 1, M + 1);
 
-    for (int i = 0; i < N + 1; i++) {
-        v(i, 0) = ux0(a + h * i);
-        int M__ = (i >= P) ? Q: M;
-        v(i, M__) = u(a + h * i, c + k * M__);
+    for(int i = 0; i < N + 1; i++) {
+        for(int j = 0; j < M + 1; j++) {
+            v(i, j) = 1;
+            z(i, j) = 0;
+        }
     }
 
+    for (int i = 1; i < P; i++) {
+        for (int j = 1; j < M; j++) {
+            v(i, j) = ux0(a + h * i) + k * j * (u(a + h * i, c + k * M) - ux0(a + h * i));
+        }
+    }
+    for (int i = P; i < N; i++) {
+        for (int j = 1; j < Q; j++) {
+            v(i, j) = ux0(a + h * i) + 2 * k * j * (u(a + h * i, c + k * Q) - ux0(a + h * i));
+        }
+    }
+
+    for (int j = 1; j < Q; j++) {
+        for (int i = 1; i < N; i++) {
+            v(i, j) = (v(i, j) + uy0(c + k * j) + h * i * (u(a + h * N, c + k * j) - uy0(c + k * j) ) ) / 2;
+        }
+    }
+    for (int j = Q; j < M; j++) {
+        for (int i = 1; i < P; i++) {
+            v(i, j) = (v(i, j) + uy0(c + k * j) + 2 * h * i * (u(a + h * P, c + k * j) - uy0(c + k * j) ) ) / 2;
+        }
+    }
+/*
+// wtf bro>?
+    int Lx = P / 2;
+    int Ly = Q / 2;
+    for (int i = Lx; i < P; i++) {
+        for (int j = Ly; j < M - Ly; j++) {
+            v(i, j) = v(i, Ly) + k * (j - Ly) * (v(i, M - Ly) - v(i, Ly));
+        }
+    }
+    for (int i = P; i < N - Lx; i++) {
+        for (int j = Ly; j < Q; j++) {
+            v(i, j) = v(i, Ly) + 2 * k * (j - Ly) * (v(i, Q) - v(i, Ly));
+        }
+    }
+
+    for (int j = Ly; j < Q; j++) {
+        for (int i = Lx; i < N - Lx; i++) {
+            v(i, j) = (v(i, j) + v(Lx, j) + k * (i - Lx) * (v(N - Lx, j) - v(Lx, j))) / 2;
+        }
+    }
+    for (int j = Q; j < M - Ly; j++) {
+        for (int i = Lx; i < P; i++) {
+            v(i, j) = (v(i, j) + v(Lx, j) + 2 * k * (i - Lx) * (v(P, j) - v(Lx, j))) / 2;
+        }
+    }
+*/
+
+    for (int i = 0; i < N + 1; i++) {
+        int M__ = (i >= P) ? Q: M;
+        v(i, 0) = ux0(a + h * i);
+        v(i, M__) = u(a + h * i, c + k * M__);
+    }
     for (int j = 0; j < M + 1; j++) {
-        v(0, j) = uy0(c + k * j);
         int N__ = (j >= Q) ? P: N;
+        v(0, j) = uy0(c + k * j);
         v(N__, j) = u(a + h * N__, c + k * j);
     }
 
-    for (int i = 1; i < N; i++)
-        for (int j = 1; j < M; j++) {
-            int M__ = (i >= P) ? Q: M;
-            int N__ = (j >= Q) ? P: N;
-            if(i >= N__ || j >= M__)
-                break;
-            v(j, j) = 0;
-            //v(i, j) = ux0(a + h * i) + k * j * (u(a + h * i, c + k * M__) - ux0(a + h * i));
-    }
 
     v(P, Q) = u(a + h * P, c + k * Q);
 
+    /*
+    for (int i = 1; i < N; i++)
+        for (int j = 1; j < M; j++) {
+            if(!((i == P && j >= Q) || (j == Q && i >= P))) {
+                int M__ = (i > P) ? Q: M;
+                int tmp = (j > Q) ? 2*k : k;
+                v(i, j) = ux0(a + h * i) + k * j * (u(a + h * i, c + k * M__) - ux0(a + h * i));
+            }
+                //v(i, j) = ux0(a + h * i) + k * j * (u(a + h * i, c + k * M__) - ux0(a + h * i));
+    }
+    */
+/*
+    for (int i = 1; i < N; i++)
+        for (int j = 1; j < M; j++) {
+            if(i != P && j != Q)
+                v(j, j) = 0;
+            //v(i, j) = ux0(a + h * i) + k * j * (u(a + h * i, c + k * M__) - ux0(a + h * i));
+    }
+*/
     for (int i = 0; i < N + 1; i++)
         for (int j = 0; j < M + 1; j++)
-            z(i, j) = 0;
+            z(i, j) = abs(u(a + h * i, c + k * j) - v(i, j));
 }
 
 void solver::prepare(Matrix& v, type_d a, type_d c) {
@@ -386,14 +450,13 @@ void solver::copy(Matrix& v1,Matrix& v2) {
 
 Q_INVOKABLE void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_d d, type_d eps, int m_it,
                                Matrix& v, std::vector<Matrix>& vPhotos,
-                               Matrix& z, std::vector<Matrix>& zPhotos) {
+                               Matrix& z, std::vector<Matrix>& zPhotos,
+                               int p, int q) {
     timer.start();
     N = n;
     M = m;
-    P = N / 2;
-    Q = M / 2;
-    xCut = (a + b) / 2;
-    yCut = (c + d) / 2;
+    P = p;
+    Q = q;
     x0 = a;
     X = b;
     y0 = c;
@@ -418,6 +481,8 @@ Q_INVOKABLE void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_
     int iter_size = 1;
 
     prepareP(v, z, a, b, c, d);
+    if(max_it == 0)
+        return;
     //prepareP(v, z, N, M, a, b, c, d, ux0, uy0, ux1, uy1);
     if (N < 100 && M < 100) {
         for(int i = 0; i < 10; i++) {
