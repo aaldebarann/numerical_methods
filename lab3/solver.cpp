@@ -1,5 +1,6 @@
 #include "solver.h"
 #include <QObject>
+#include <iostream>
 
 //constexpr type_d pi = 3.14159265358979323846264338327950288Q;
 
@@ -169,7 +170,7 @@ void solver::prepareP(Matrix& v, Matrix& z, type_d a, type_d b, type_d c, type_d
             v(i, j) = ux0(a + h * i) + 2 * k * j * (u(a + h * i, c + k * Q) - ux0(a + h * i));
         }
     }
-
+/*
     for (int j = 1; j < Q; j++) {
         for (int i = 1; i < N; i++) {
             v(i, j) = (v(i, j) + uy0(c + k * j) + h * i * (u(a + h * N, c + k * j) - uy0(c + k * j) ) ) / 2;
@@ -180,7 +181,8 @@ void solver::prepareP(Matrix& v, Matrix& z, type_d a, type_d b, type_d c, type_d
             v(i, j) = (v(i, j) + uy0(c + k * j) + 2 * h * i * (u(a + h * P, c + k * j) - uy0(c + k * j) ) ) / 2;
         }
     }
-/*
+
+
 // wtf bro>?
     int Lx = P / 2;
     int Ly = Q / 2;
@@ -598,6 +600,7 @@ Q_INVOKABLE void solver::solve(int n, int m, type_d a, type_d b, type_d c, type_
         }
         max_z = last_mz;
         achieved_accuracy = cur_accuracy;
+        std::cout << "final" << std::endl;
         calc_r(v);
         iter[iter_size] = (it);
         ACCURACY[iter_size] = (achieved_accuracy);
@@ -762,11 +765,13 @@ void solver::fill_right_side(Matrix& v, type_d a, type_d c){
     right_side.clear();
     for (int j = 1; j < M; j++){
         for (int i = 1; i < N; i++){
-            right_side.push_back(- f(a + i * h, c + j * k)
+            if(i < P || j < Q) {
+                right_side.push_back(- f(a + i * h, c + j * k)
                                  - hor * v(i - 1, j) * is_border(i - 1, j)
                                  - hor * v(i + 1, j) * is_border(i + 1, j)
                                  - ver * v(i, j - 1) * is_border(i, j - 1)
                                  - ver * v(i, j + 1) * is_border(i, j + 1));
+            }
         }
     }
 }
@@ -776,16 +781,19 @@ void solver::calc_r(Matrix& v){
     type_d r = 0;
     for (int j = 1; j < M; j++){
         for (int i = 1; i < N; i++){
-            r += (A  * v(i, j) + (!(is_border(i - 1, j))) * hor * v(i - 1, j)
-                  + (!(is_border(i + 1, j))) * hor * v(i + 1, j)
-                  + (!(is_border(i, j - 1))) * hor * v(i, j - 1)
-                  + (!(is_border(i, j + 1))) * hor * v(i, j + 1) - right_side[place]) *
-                 (A  * v(i, j) + (!(is_border(i - 1, j))) * hor * v(i - 1, j)
-                  + (!(is_border(i + 1, j))) * hor * v(i + 1, j)
-                  + (!(is_border(i, j - 1))) * hor * v(i, j - 1)
-                  + (!(is_border(i, j + 1))) * hor * v(i, j + 1) - right_side[place]);
-            place++;
-        }
+            if(i < P || j < Q) {
+
+                r += (A  * v(i, j) + (!(is_border(i - 1, j))) * hor * v(i - 1, j)
+                      + (!(is_border(i + 1, j))) * hor * v(i + 1, j)
+                      + (!(is_border(i, j - 1))) * hor * v(i, j - 1)
+                      + (!(is_border(i, j + 1))) * hor * v(i, j + 1) - right_side[place]) *
+                     (A  * v(i, j) + (!(is_border(i - 1, j))) * hor * v(i - 1, j)
+                      + (!(is_border(i + 1, j))) * hor * v(i + 1, j)
+                      + (!(is_border(i, j - 1))) * hor * v(i, j - 1)
+                      + (!(is_border(i, j + 1))) * hor * v(i, j + 1) - right_side[place]);
+                place++;
+            }
+        }            
     }
     max_r = sqrt(r);
 }
